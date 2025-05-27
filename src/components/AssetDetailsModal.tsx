@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Edit, Save, QrCode, MapPin, Calendar, DollarSign, Wrench, Trash2, ArrowRight, Camera } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import Image from 'next/image'
+
 
 interface Asset {
   id: string
