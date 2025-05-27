@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { X, Edit, Save, QrCode, MapPin, Calendar, DollarSign, Wrench, Trash2, ArrowRight, Camera } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
-
 interface Asset {
   id: string
   asset_id: string
@@ -163,21 +162,43 @@ export default function AssetDetailsModal({ isOpen, onClose, asset, onAssetUpdat
     }
   }
 
-  const downloadQRCode = () => {
+  // FIXED: Proper QR Code Download Function
+  const downloadQRCode = async () => {
     if (!asset) return
     
-    // Create QR code URL using qr-server.com API
-    const qrText = asset.asset_id
-    const qrSize = '300x300'
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}&data=${encodeURIComponent(qrText)}`
-    
-    // Create download link
-    const link = document.createElement('a')
-    link.href = qrUrl
-    link.download = `${asset.asset_id}-QRCode.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    try {
+      // Create QR code URL
+      const qrText = asset.asset_id
+      const qrSize = '300x300'
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}&data=${encodeURIComponent(qrText)}`
+      
+      // Fetch the image as blob
+      const response = await fetch(qrUrl)
+      const blob = await response.blob()
+      
+      // Create download URL
+      const url = URL.createObjectURL(blob)
+      
+      // Create and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${asset.name}-${asset.asset_id}-QRCode.png`
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up the object URL
+      URL.revokeObjectURL(url)
+      
+      // Success message
+      alert(`✅ QR Code downloaded: ${asset.name}-${asset.asset_id}-QRCode.png`)
+      
+    } catch (error) {
+      console.error('Error downloading QR code:', error)
+      alert('Error downloading QR code. Please try again.')
+    }
   }
 
   const handleDelete = async () => {
@@ -451,11 +472,13 @@ export default function AssetDetailsModal({ isOpen, onClose, asset, onAssetUpdat
                   <p className="text-sm text-gray-500">QR Code</p>
                   <p className="text-xs text-gray-400 font-mono">{asset.qr_code || asset.asset_id}</p>
                 </div>
+                {/* FIXED: Proper Download Button */}
                 <button 
                   onClick={downloadQRCode}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full flex items-center justify-center space-x-2"
                 >
-                  Download QR Code
+                  <span>📥</span>
+                  <span>Download QR Code</span>
                 </button>
               </div>
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, QrCode, Plus, ArrowUpDown, MoreVertical, MapPin, DollarSign } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import AddAssetModal from './AddAssetModal'
 import AssetDetailsModal from './AssetDetailsModal'
 import QRScannerModal from './QRScannerModal'
@@ -33,6 +34,7 @@ interface AssetStats {
 }
 
 export default function Dashboard() {
+  const router = useRouter()
   const [assets, setAssets] = useState<Asset[]>([])
   const [assetStats, setAssetStats] = useState<AssetStats>({
     total: 0,
@@ -50,6 +52,31 @@ export default function Dashboard() {
   useEffect(() => {
     loadAssets()
   }, [])
+
+  // Fixed Sign Out Function
+  const handleSignOut = async () => {
+    try {
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Error signing out:', error.message)
+        alert('Error signing out: ' + error.message)
+        return
+      }
+
+      // Clear any local storage
+      localStorage.clear()
+      sessionStorage.clear()
+
+      // Redirect to login page
+      router.push('/login')
+      
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error)
+      alert('An unexpected error occurred during sign out')
+    }
+  }
 
   const loadAssets = async () => {
     setLoading(true)
@@ -153,8 +180,12 @@ export default function Dashboard() {
               <button className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
                 Admin Portal
               </button>
-              <button className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all">
-                Sign Out
+              {/* FIXED: Added onClick handler for Sign Out */}
+              <button 
+                onClick={handleSignOut}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all"
+              >
+                🚪 Sign Out
               </button>
             </div>
           </div>
