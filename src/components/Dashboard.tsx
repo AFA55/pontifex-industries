@@ -446,7 +446,7 @@ const Dashboard: React.FC = () => {
                           {asset.name || 'Unnamed Asset'}
                         </h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                          #{asset.serial_number || asset.id.slice(0, 8)}
+                          #{asset.serial_number || asset.asset_id || asset.id.slice(0, 8)}
                         </p>
                       </div>
                     </div>
@@ -541,7 +541,7 @@ const Dashboard: React.FC = () => {
         <AssetDetailsModal
           isOpen={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
-          asset={selectedAsset as any} // Type casting to avoid conflicts between Asset definitions
+          asset={selectedAsset}
           onAssetUpdated={fetchAssets}
         />
       )}
@@ -550,8 +550,9 @@ const Dashboard: React.FC = () => {
         <QRScannerModal
           isOpen={showQRScanner}
           onClose={() => setShowQRScanner(false)}
-          onAssetFound={(asset: any) => { // Type casting to avoid conflicts
-            setSelectedAsset(asset as DashboardAsset);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onAssetFound={(asset: any) => {
+            setSelectedAsset(asset);
             setShowDetailsModal(true);
             setShowQRScanner(false);
           }}
