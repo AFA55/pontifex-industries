@@ -1,429 +1,564 @@
-'use client'
+// src/components/Dashboard.tsx - WORLD-CLASS MOBILE-FIRST TRANSFORMATION
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Search, QrCode, Plus, ArrowUpDown, MoreVertical, MapPin, DollarSign } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import AddAssetModal from './AddAssetModal'
-import AssetDetailsModal from './AssetDetailsModal'
-import QRScannerModal from './QRScannerModal'
+/**
+ * Architecture Note: This component uses DashboardAsset type instead of the shared Asset type
+ * to avoid conflicts with existing Asset types in AssetDetailsModal and QRScannerModal.
+ * Type casting is used at modal boundaries to maintain compatibility.
+ */
 
-interface Asset {
-  id: string
-  asset_id: string
-  name: string
-  description: string
-  category: string
-  brand: string
-  model: string
-  status: string
-  current_location_id: string
-  purchase_date: string
-  purchase_price: number
-  serial_number: string
-  location?: {
-    name: string
-  }
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import AddAssetModal from './AddAssetModal';
+import AssetDetailsModal from './AssetDetailsModal';
+import QRScannerModal from './QRScannerModal';
+import { 
+  Search, 
+  Plus, 
+  QrCode, 
+  ArrowUpDown, 
+  MapPin, 
+  Clock, 
+  Wrench, 
+  CheckCircle, 
+  AlertTriangle,
+  Circle,
+  RefreshCw,
+  Filter,
+  MoreVertical
+} from 'lucide-react';
+
+// Use generic type to avoid conflicts with other Asset definitions
+type DashboardAsset = {
+  id: string;
+  asset_id?: string;
+  name?: string;
+  description?: string;
+  brand?: string;
+  model?: string;
+  category?: string;
+  status: 'available' | 'in_use' | 'maintenance' | 'offline';
+  location?: string;
+  current_location_id?: string;
+  purchase_price?: number;
+  qr_code?: string;
+  last_updated?: string;
+  assigned_to?: string;
+  serial_number?: string;
+  purchase_date?: string;
+  next_maintenance?: string;
+  created_at?: string;
+};
+
+interface DashboardStats {
+  total: number;
+  available: number;
+  in_use: number;
+  maintenance: number;
 }
 
-interface AssetStats {
-  total: number
-  available: number
-  in_use: number
-  maintenance: number
-}
+const Dashboard: React.FC = () => {
+  // State Management - Using flexible typing for cross-component compatibility
+  const [assets, setAssets] = useState<DashboardAsset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<DashboardAsset[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({ total: 0, available: 0, in_use: 0, maintenance: 0 });
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-export default function Dashboard() {
-  const router = useRouter()
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [assetStats, setAssetStats] = useState<AssetStats>({
-    total: 0,
-    available: 0,
-    in_use: 0,
-    maintenance: 0
-  })
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
+  const { signOut } = useAuth();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    loadAssets()
-  }, [])
-
-  // Fixed Sign Out Function
-  const handleSignOut = async () => {
-    try {
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Error signing out:', error.message)
-        alert('Error signing out: ' + error.message)
-        return
-      }
-
-      // Clear any local storage
-      localStorage.clear()
-      sessionStorage.clear()
-
-      // Redirect to login page
-      router.push('/login')
-      
-    } catch (error) {
-      console.error('Unexpected error during sign out:', error)
-      alert('An unexpected error occurred during sign out')
+  // Status Configuration with 2025 Design Elements
+  const statusConfig = {
+    available: { 
+      icon: CheckCircle, 
+      color: 'text-green-500', 
+      bg: 'bg-green-500/10', 
+      border: 'border-green-500/20',
+      glow: 'shadow-green-500/20',
+      label: 'Available',
+      pulse: true
+    },
+    in_use: { 
+      icon: Circle, 
+      color: 'text-orange-500', 
+      bg: 'bg-orange-500/10', 
+      border: 'border-orange-500/20',
+      glow: 'shadow-orange-500/20',
+      label: 'In Use',
+      pulse: false
+    },
+    maintenance: { 
+      icon: AlertTriangle, 
+      color: 'text-red-500', 
+      bg: 'bg-red-500/10', 
+      border: 'border-red-500/20',
+      glow: 'shadow-red-500/20',
+      label: 'Maintenance',
+      pulse: true
+    },
+    offline: { 
+      icon: Circle, 
+      color: 'text-gray-400', 
+      bg: 'bg-gray-400/10', 
+      border: 'border-gray-400/20',
+      glow: 'shadow-gray-400/20',
+      label: 'Offline',
+      pulse: false
     }
-  }
+  };
 
-  const loadAssets = async () => {
-    setLoading(true)
+  // Data Fetching with Real-time Updates
+  const fetchAssets = useCallback(async () => {
     try {
-      // Get current user's company
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .single()
-
-      if (!profile) return
-
-      // Load assets with location info
-      const { data: assetsData, error } = await supabase
+      const { data, error } = await supabase
         .from('assets')
-        .select(`
-          *,
-          location:locations!current_location_id(name)
-        `)
-        .eq('company_id', profile.company_id)
-        .order('created_at', { ascending: false })
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (error) throw error
-
-      setAssets(assetsData || [])
-
-      // Calculate stats
-      const stats = {
-        total: assetsData?.length || 0,
-        available: assetsData?.filter(a => a.status === 'available').length || 0,
-        in_use: assetsData?.filter(a => a.status === 'in_use').length || 0,
-        maintenance: assetsData?.filter(a => a.status === 'maintenance').length || 0
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({ title: "Error", description: "Failed to load assets", variant: "destructive" });
+        return;
       }
-      setAssetStats(stats)
 
-    } catch (error) {
-      console.error('Error loading assets:', error)
+      setAssets(data || []);
+      calculateStats(data || []);
+    } catch (fetchError) {
+      console.error('Error fetching assets:', fetchError);
+      toast({ title: "Error", description: "Failed to load assets", variant: "destructive" });
     } finally {
-      setLoading(false)
+      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  }, [toast]);
 
-  const filteredAssets = assets.filter(asset =>
-    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.asset_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Statistics Calculation
+  const calculateStats = (assetData: DashboardAsset[]) => {
+    const total = assetData.length;
+    const available = assetData.filter(asset => asset.status === 'available').length;
+    const in_use = assetData.filter(asset => asset.status === 'in_use').length;
+    const maintenance = assetData.filter(asset => asset.status === 'maintenance').length;
+    
+    setStats({ total, available, in_use, maintenance });
+  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-800'
-      case 'in_use':
-        return 'bg-orange-100 text-orange-800'
-      case 'maintenance':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  // Search and Filter Logic
+  useEffect(() => {
+    let filtered = assets;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(asset =>
+        asset.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.model?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price)
-  }
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(asset => asset.status === filterStatus);
+    }
 
-  const handleAssetAdded = () => {
-    loadAssets() // Refresh the asset list
-  }
+    setFilteredAssets(filtered);
+  }, [assets, searchTerm, filterStatus]);
 
-  const handleAssetClick = (asset: Asset) => {
-    setSelectedAsset(asset)
-    setIsDetailsModalOpen(true)
-  }
+  // Real-time subscription
+  useEffect(() => {
+    fetchAssets();
 
-  const handleAssetUpdated = () => {
-    loadAssets() // Refresh the asset list
-  }
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('assets')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => {
+        fetchAssets();
+      })
+      .subscribe();
 
-  const handleQRAssetFound = (asset: Asset) => {
-    // When QR scanner finds an asset, open its details
-    setSelectedAsset(asset)
-    setIsDetailsModalOpen(true)
-  }
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchAssets]);
+
+  // Pull to refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchAssets();
+  };
+
+  // Time formatting
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return 'Unknown';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  // Asset card click handler
+  const handleAssetClick = (asset: DashboardAsset) => {
+    setSelectedAsset(asset);
+    setShowDetailsModal(true);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      {/* Header with Glassmorphism Effect */}
+      <div className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border-b border-white/20">
+        <div className="px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Management Dashboard</h1>
-              <p className="text-blue-100 mt-1">Pontifex Industries Asset Management</p>
-              <p className="text-blue-200 text-sm mt-1">Welcome back, Demo User</p>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                  <Wrench className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white">Asset Control</h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Pontifex Industries</p>
+                </div>
+              </div>
             </div>
-            <div className="flex space-x-3">
-              <button className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all">
-                Admin Portal
-              </button>
-              {/* FIXED: Added onClick handler for Sign Out */}
-              <button 
-                onClick={handleSignOut}
-                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all"
+            <button
+              onClick={signOut}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 max-w-7xl mx-auto">
+        {/* Live Stats Dashboard - Bento Grid Layout */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total Assets */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Total Assets</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Available */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Available</p>
+              </div>
+              <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* In Use */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-orange-600">{stats.in_use}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">In Use</p>
+              </div>
+              <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                <Circle className="w-5 h-5 text-orange-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Maintenance */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 border border-white/20 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-red-600">{stats.maintenance}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Maintenance</p>
+              </div>
+              <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions - Construction Worker Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {/* QR Scanner - Prominent for field workers */}
+          <button
+            onClick={() => setShowQRScanner(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+          >
+            <QrCode className="w-8 h-8" />
+            <div className="text-left">
+              <p className="font-semibold text-lg">QR Scanner</p>
+              <p className="text-blue-100 text-sm">Quick asset check-in/out</p>
+            </div>
+          </button>
+
+          {/* Add Asset */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/25"
+          >
+            <Plus className="w-8 h-8" />
+            <div className="text-left">
+              <p className="font-semibold text-lg">Add Asset</p>
+              <p className="text-green-100 text-sm">Register new equipment</p>
+            </div>
+          </button>
+
+          {/* Bulk Transfer */}
+          <button
+            onClick={() => {/* TODO: Implement bulk transfer */}}
+            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-orange-500/25"
+          >
+            <ArrowUpDown className="w-8 h-8" />
+            <div className="text-left">
+              <p className="font-semibold text-lg">Bulk Transfer</p>
+              <p className="text-orange-100 text-sm">Move multiple assets</p>
+            </div>
+          </button>
+        </div>
+
+        {/* Search and Filter Controls */}
+        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/20">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search assets, categories, locations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-500"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center space-x-2">
+              <Filter className="w-5 h-5 text-slate-400" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white min-w-[120px]"
               >
-                🚪 Sign Out
-              </button>
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="in_use">In Use</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="offline">Offline</option>
+              </select>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Assets</p>
-                <p className="text-3xl font-bold text-gray-900">{assetStats.total}</p>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <QrCode className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Available</p>
-                <p className="text-3xl font-bold text-green-600">{assetStats.available}</p>
-              </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Use</p>
-                <p className="text-3xl font-bold text-orange-600">{assetStats.in_use}</p>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <div className="h-3 w-3 bg-orange-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Maintenance</p>
-                <p className="text-3xl font-bold text-red-600">{assetStats.maintenance}</p>
-              </div>
-              <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <div className="h-3 w-3 bg-red-500 rounded-full"></div>
-              </div>
-            </div>
+            {/* Refresh Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl transition-colors flex items-center space-x-2 min-w-[100px] justify-center"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <button 
-            onClick={() => setIsQRScannerOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center space-x-4">
-              <QrCode className="h-8 w-8 group-hover:scale-110 transition-transform" />
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">QR Scanner</h3>
-                <p className="text-blue-100 text-sm">Quick asset check-in/out</p>
+        {/* Asset Cards Grid - Mobile-First Bento Layout */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white/70 dark:bg-slate-800/70 rounded-2xl p-6 border border-white/20 animate-pulse">
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-lg mb-4"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded mb-2"></div>
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
               </div>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-gradient-to-r from-teal-600 to-teal-700 text-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center space-x-4">
-              <Plus className="h-8 w-8 group-hover:scale-110 transition-transform" />
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">Add Asset</h3>
-                <p className="text-teal-100 text-sm">Register new equipment</p>
-              </div>
-            </div>
-          </button>
-
-          <button className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-lg shadow-sm hover:shadow-md transition-all group">
-            <div className="flex items-center space-x-4">
-              <ArrowUpDown className="h-8 w-8 group-hover:scale-110 transition-transform" />
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">Bulk Transfer</h3>
-                <p className="text-orange-100 text-sm">Move multiple assets</p>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Recent Assets Section */}
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Assets</h2>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search assets..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  Search
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
+        ) : filteredAssets.length === 0 ? (
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-12 text-center border border-white/20">
+            <Wrench className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No Assets Found</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              {searchTerm || filterStatus !== 'all' 
+                ? 'Try adjusting your search or filter criteria'
+                : 'Get started by adding your first piece of equipment'
+              }
+            </p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+            >
+              Add First Asset
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredAssets.map((asset) => {
+              const statusInfo = statusConfig[asset.status];
+              const StatusIcon = statusInfo.icon;
+              
+              return (
+                <div
+                  key={asset.id}
+                  onClick={() => handleAssetClick(asset)}
+                  className={`
+                    bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20
+                    hover:shadow-xl hover:shadow-${statusInfo.glow} hover:-translate-y-1
+                    transition-all duration-300 cursor-pointer group
+                    ${statusInfo.pulse ? 'animate-pulse' : ''}
+                  `}
+                >
+                  {/* Asset Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-12 h-12 ${statusInfo.bg} rounded-xl flex items-center justify-center ${statusInfo.border} border`}>
+                        <Wrench className={`w-6 h-6 ${statusInfo.color}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                          {asset.name || 'Unnamed Asset'}
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          #{asset.serial_number || asset.id.slice(0, 8)}
+                        </p>
+                      </div>
+                    </div>
+                    <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                      <MoreVertical className="w-4 h-4 text-slate-400" />
+                    </button>
+                  </div>
 
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading assets...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Asset ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Value
-                    </th>
-                    <th className="relative px-6 py-3">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAssets.map((asset) => (
-                    <tr 
-                      key={asset.id} 
-                      onClick={() => handleAssetClick(asset)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  {/* Status Badge */}
+                  <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full ${statusInfo.bg} ${statusInfo.border} border mb-4`}>
+                    <StatusIcon className={`w-4 h-4 ${statusInfo.color}`} />
+                    <span className={`text-sm font-medium ${statusInfo.color}`}>
+                      {statusInfo.label}
+                    </span>
+                  </div>
+
+                  {/* Asset Details */}
+                  <div className="space-y-3">
+                    {/* Location */}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-600 dark:text-slate-400">{asset.location || 'Unknown Location'}</span>
+                    </div>
+
+                    {/* Last Updated */}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Last: {formatTimeAgo(asset.last_updated)}
+                      </span>
+                    </div>
+
+                    {/* Category */}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-md text-xs">
+                        {asset.category || 'Uncategorized'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions - 44px+ Touch Targets */}
+                  <div className="flex justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: Quick QR view
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <QrCode className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {asset.asset_id}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{asset.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {asset.brand} {asset.model}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {asset.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(asset.status)}`}>
-                          {asset.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <MapPin className="h-4 w-4 text-gray-400 mr-1" />
-                          {asset.location?.name || 'Unassigned'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <DollarSign className="h-4 w-4 text-gray-400 mr-1" />
-                          {formatPrice(asset.purchase_price)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button className="text-blue-600 hover:text-blue-900">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      <QrCode className="w-4 h-4" />
+                      <span>QR</span>
+                    </button>
 
-              {filteredAssets.length === 0 && !loading && (
-                <div className="p-8 text-center">
-                  <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No assets found matching your search.</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: Quick edit
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
+                    >
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: Quick transfer
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
+                    >
+                      <ArrowUpDown className="w-4 h-4" />
+                      <span>Move</span>
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Add Asset Modal */}
-      <AddAssetModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAssetAdded={handleAssetAdded}
-      />
+      {/* Modals */}
+      {showAddModal && (
+        <AddAssetModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onAssetAdded={fetchAssets}
+        />
+      )}
 
-      {/* Asset Details Modal */}
-      <AssetDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        asset={selectedAsset}
-        onAssetUpdated={handleAssetUpdated}
-      />
+      {showDetailsModal && selectedAsset && (
+        <AssetDetailsModal
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+          asset={selectedAsset as any} // Type casting to avoid conflicts between Asset definitions
+          onAssetUpdated={fetchAssets}
+        />
+      )}
 
-      {/* QR Scanner Modal */}
-      <QRScannerModal
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onAssetFound={handleQRAssetFound}
-      />
+      {showQRScanner && (
+        <QRScannerModal
+          isOpen={showQRScanner}
+          onClose={() => setShowQRScanner(false)}
+          onAssetFound={(asset: any) => { // Type casting to avoid conflicts
+            setSelectedAsset(asset as DashboardAsset);
+            setShowDetailsModal(true);
+            setShowQRScanner(false);
+          }}
+        />
+      )}
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;
