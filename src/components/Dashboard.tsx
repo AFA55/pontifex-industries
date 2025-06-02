@@ -14,6 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import AddAssetModal from './AddAssetModal';
 import AssetDetailsModal from './AssetDetailsModal';
 import QRScannerModal from './QRScannerModal';
+import QRQuickViewModal from './QRQuickViewModal';
+import QuickEditModal from './QuickEditModal';
+import QuickMoveModal from './QuickMoveModal';
+import BulkOperationsModal from './BulkOperationsModal';
 import { 
   Search, 
   Plus, 
@@ -72,6 +76,10 @@ const Dashboard: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showQRQuickView, setShowQRQuickView] = useState(false);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [showQuickMove, setShowQuickMove] = useState(false);
+  const [showBulkOperations, setShowBulkOperations] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const { signOut } = useAuth();
@@ -84,36 +92,32 @@ const Dashboard: React.FC = () => {
       color: 'text-green-500', 
       bg: 'bg-green-500/10', 
       border: 'border-green-500/20',
-      glow: 'shadow-green-500/20',
-      label: 'Available',
-      pulse: true
+      glow: 'green-500/10',
+      label: 'Available'
     },
     in_use: { 
       icon: Circle, 
       color: 'text-orange-500', 
       bg: 'bg-orange-500/10', 
       border: 'border-orange-500/20',
-      glow: 'shadow-orange-500/20',
-      label: 'In Use',
-      pulse: false
+      glow: 'orange-500/10',
+      label: 'In Use'
     },
     maintenance: { 
       icon: AlertTriangle, 
       color: 'text-red-500', 
       bg: 'bg-red-500/10', 
       border: 'border-red-500/20',
-      glow: 'shadow-red-500/20',
-      label: 'Maintenance',
-      pulse: true
+      glow: 'red-500/15',
+      label: 'Maintenance'
     },
     offline: { 
       icon: Circle, 
       color: 'text-gray-400', 
       bg: 'bg-gray-400/10', 
       border: 'border-gray-400/20',
-      glow: 'shadow-gray-400/20',
-      label: 'Offline',
-      pulse: false
+      glow: 'gray-400/10',
+      label: 'Offline'
     }
   };
 
@@ -336,7 +340,7 @@ const Dashboard: React.FC = () => {
 
           {/* Bulk Transfer */}
           <button
-            onClick={() => {/* TODO: Implement bulk transfer */}}
+            onClick={() => setShowBulkOperations(true)}
             className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-orange-500/25"
           >
             <ArrowUpDown className="w-8 h-8" />
@@ -428,12 +432,7 @@ const Dashboard: React.FC = () => {
                 <div
                   key={asset.id}
                   onClick={() => handleAssetClick(asset)}
-                  className={`
-                    bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20
-                    hover:shadow-xl hover:shadow-${statusInfo.glow} hover:-translate-y-1
-                    transition-all duration-300 cursor-pointer group
-                    ${statusInfo.pulse ? 'animate-pulse' : ''}
-                  `}
+                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
                 >
                   {/* Asset Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -492,7 +491,8 @@ const Dashboard: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Quick QR view
+                        setSelectedAsset(asset);
+                        setShowQRQuickView(true);
                       }}
                       className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
                     >
@@ -503,7 +503,8 @@ const Dashboard: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Quick edit
+                        setSelectedAsset(asset);
+                        setShowQuickEdit(true);
                       }}
                       className="flex items-center space-x-2 px-4 py-2 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 text-green-600 dark:text-green-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
                     >
@@ -513,7 +514,8 @@ const Dashboard: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // TODO: Quick transfer
+                        setSelectedAsset(asset);
+                        setShowQuickMove(true);
                       }}
                       className="flex items-center space-x-2 px-4 py-2 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-xl transition-colors text-sm font-medium min-h-[44px]"
                     >
@@ -556,6 +558,41 @@ const Dashboard: React.FC = () => {
             setShowDetailsModal(true);
             setShowQRScanner(false);
           }}
+        />
+      )}
+
+      {showQRQuickView && selectedAsset && (
+        <QRQuickViewModal
+          isOpen={showQRQuickView}
+          onClose={() => setShowQRQuickView(false)}
+          asset={selectedAsset}
+        />
+      )}
+
+      {showQuickEdit && selectedAsset && (
+        <QuickEditModal
+          isOpen={showQuickEdit}
+          onClose={() => setShowQuickEdit(false)}
+          asset={selectedAsset}
+          onAssetUpdated={fetchAssets}
+        />
+      )}
+
+      {showQuickMove && selectedAsset && (
+        <QuickMoveModal
+          isOpen={showQuickMove}
+          onClose={() => setShowQuickMove(false)}
+          asset={selectedAsset}
+          onAssetUpdated={fetchAssets}
+        />
+      )}
+
+      {showBulkOperations && (
+        <BulkOperationsModal
+          isOpen={showBulkOperations}
+          onClose={() => setShowBulkOperations(false)}
+          assets={filteredAssets}
+          onAssetsUpdated={fetchAssets}
         />
       )}
     </div>
