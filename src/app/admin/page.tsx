@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import SignupForm from '@/components/auth/SignupForm'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { supabase } from '@/lib/supabase'
 
 interface DemoAccount {
@@ -14,17 +15,11 @@ interface DemoAccount {
   created_at: string
 }
 
-export default function AdminPage() {
-  const { user, profile, loading, signOut } = useAuth() // ✅ Fixed: Call useAuth at top level
+function AdminPageContent() {
+  const { user, profile, loading, signOut } = useAuth()
   const [accounts, setAccounts] = useState<DemoAccount[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState(true)
   const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
 
   useEffect(() => {
     if (user) {
@@ -53,7 +48,6 @@ export default function AdminPage() {
   }
 
   const handleSignOut = async () => {
-    // ✅ Fixed: Use signOut from useAuth hook called at top level
     await signOut()
     router.push('/login')
   }
@@ -61,20 +55,16 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-construction">Loading...</div>
+        <div className="text-construction">Loading admin panel...</div>
       </div>
     )
-  }
-
-  if (!user) {
-    return null
   }
 
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-pontifex-blue-900 to-teal-600 text-white p-6 rounded-xl mb-8">
+        <div className="bg-gradient-to-r from-blue-900 to-teal-600 text-white p-6 rounded-xl mb-8">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold mb-2">👑 Admin Portal</h1>
@@ -84,7 +74,7 @@ export default function AdminPage() {
             <div className="space-x-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="bg-white text-pontifex-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100"
+                className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100"
               >
                 View Dashboard
               </button>
@@ -105,8 +95,8 @@ export default function AdminPage() {
           </div>
 
           {/* Existing Accounts */}
-          <div className="card-pontifex">
-            <h2 className="text-2xl font-bold text-pontifex-blue-900 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-2xl font-bold text-blue-900 mb-4">
               Demo Accounts ({accounts.length})
             </h2>
             
@@ -142,26 +132,34 @@ export default function AdminPage() {
         </div>
 
         {/* Demo Instructions */}
-        <div className="card-pontifex mt-8">
-          <h2 className="text-2xl font-bold text-pontifex-blue-900 mb-4">
-            🎯 Thursday Demo Instructions
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mt-8">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">
+            🎯 B&D Demo Instructions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <h3 className="font-semibold text-lg mb-2">1. Create Accounts</h3>
-              <p className="text-gray-600">Use the form to create demo accounts for each attendee. Different roles show different features.</p>
+              <p className="text-gray-600">Use the form to create demo accounts for B&D team members. Different roles show different features.</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">2. Share Login URL</h3>
-              <p className="text-gray-600">Give attendees: <code className="bg-gray-100 px-2 py-1 rounded">/login</code></p>
+              <h3 className="font-semibold text-lg mb-2">2. Demo Features</h3>
+              <p className="text-gray-600">Show asset management, QR scanning, bulk operations, and real-time updates across multiple users.</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">3. Demo Features</h3>
-              <p className="text-gray-600">Show asset management, QR scanning, and real-time updates across multiple users.</p>
+              <h3 className="font-semibold text-lg mb-2">3. ROI Presentation</h3>
+              <p className="text-gray-600">Demonstrate 16x speed advantage over Hilti, $535K annual savings, and mobile-first design.</p>
             </div>
           </div>
         </div>
       </div>
     </main>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <ProtectedRoute requireAuth={true}>
+      <AdminPageContent />
+    </ProtectedRoute>
   )
 }

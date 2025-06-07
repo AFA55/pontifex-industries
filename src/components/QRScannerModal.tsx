@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { X, Camera, QrCode, Search, Zap, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, Camera, QrCode, Search, Zap, CheckCircle, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface Asset {
@@ -19,7 +19,7 @@ interface Asset {
   serial_number: string
   location?: {
     name: string
-  }
+  } | string
 }
 
 interface QRScannerModalProps {
@@ -35,8 +35,18 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [foundAsset, setFoundAsset] = useState<Asset | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionProgress, setTransitionProgress] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+
+  // Helper function to safely extract string values from potential objects
+  const getStringValue = (value: string | { name: string } | undefined): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return '';
+  };
 
   useEffect(() => {
     if (isOpen && isScanning) {
@@ -75,6 +85,29 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
     }
   }
 
+  const smoothTransitionToAsset = async (asset: Asset) => {
+    setIsTransitioning(true)
+    setTransitionProgress(0)
+
+    // Smooth progress animation
+    const progressInterval = setInterval(() => {
+      setTransitionProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval)
+          return 100
+        }
+        return prev + 2 // Smooth increment
+      })
+    }, 20)
+
+    // Wait for smooth transition completion
+    await new Promise(resolve => setTimeout(resolve, 1200))
+
+    // Call parent callback and close
+    onAssetFound(asset)
+    handleClose()
+  }
+
   const searchAsset = async (searchTerm: string) => {
     if (!searchTerm.trim()) return
 
@@ -108,11 +141,8 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
         setFoundAsset(asset)
         setSuccess(`Found: ${asset.name}`)
         
-        // Call parent callback after short delay
-        setTimeout(() => {
-          onAssetFound(asset)
-          handleClose()
-        }, 1500)
+        // Start smooth transition
+        await smoothTransitionToAsset(asset)
       } else {
         setError('Asset not found. Please check the QR code or Asset ID.')
       }
@@ -136,19 +166,21 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
     setError('')
     setSuccess('')
     setFoundAsset(null)
+    setIsTransitioning(false)
+    setTransitionProgress(0)
     onClose()
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800 border-green-200'
       case 'in_use':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'maintenance':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800 border-red-200'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -168,7 +200,66 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        
+        {/* Transition Overlay */}
+        {isTransitioning && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/95 to-teal-600/95 rounded-lg flex items-center justify-center z-10 backdrop-blur-sm">
+            <div className="text-center text-white">
+              {/* Smooth Loading Animation */}
+              <div className="relative mb-6">
+                <div className="w-20 h-20 mx-auto">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+                  <div 
+                    className="absolute inset-0 rounded-full border-4 border-white border-r-transparent animate-spin"
+                    style={{
+                      animationDuration: '1s'
+                    }}
+                  ></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <QrCode className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Asset Info Preview */}
+              {foundAsset && (
+                <div className="space-y-3 mb-6">
+                  <h3 className="text-xl font-bold text-white">
+                    {foundAsset.name}
+                  </h3>
+                  <p className="text-blue-100">
+                    #{foundAsset.serial_number || foundAsset.asset_id}
+                  </p>
+                  <div className="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm">Asset Located</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Bar */}
+              <div className="w-64 mx-auto mb-4">
+                <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-white h-full transition-all duration-300 ease-out rounded-full"
+                    style={{ width: `${transitionProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-blue-100 mt-2">
+                  Loading asset details... {Math.round(transitionProgress)}%
+                </p>
+              </div>
+
+              {/* Speed Indicator */}
+              <div className="flex items-center justify-center space-x-2 text-sm text-blue-100">
+                <Zap className="w-4 h-4" />
+                <span>10x faster than traditional systems</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-t-lg">
           <div className="flex items-center space-x-3">
@@ -195,10 +286,10 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
           <div className="grid grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => setIsScanning(true)}
-              className={`p-4 rounded-lg border-2 transition-all ${
+              className={`p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 ${
                 isScanning 
-                  ? 'border-blue-500 bg-blue-50 text-blue-600' 
-                  : 'border-gray-300 hover:border-blue-300'
+                  ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-lg' 
+                  : 'border-gray-300 hover:border-blue-300 hover:shadow-md'
               }`}
             >
               <Camera className="h-8 w-8 mx-auto mb-2" />
@@ -208,10 +299,10 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
 
             <button
               onClick={() => setIsScanning(false)}
-              className={`p-4 rounded-lg border-2 transition-all ${
+              className={`p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 ${
                 !isScanning 
-                  ? 'border-blue-500 bg-blue-50 text-blue-600' 
-                  : 'border-gray-300 hover:border-blue-300'
+                  ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-lg' 
+                  : 'border-gray-300 hover:border-blue-300 hover:shadow-md'
               }`}
             >
               <Search className="h-8 w-8 mx-auto mb-2" />
@@ -231,7 +322,7 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                   className="w-full h-64 object-cover"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="border-2 border-white border-dashed w-48 h-48 rounded-lg flex items-center justify-center">
+                  <div className="border-2 border-white border-dashed w-48 h-48 rounded-lg flex items-center justify-center animate-pulse">
                     <QrCode className="h-16 w-16 text-white opacity-75" />
                   </div>
                 </div>
@@ -242,27 +333,37 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                 </div>
               </div>
 
-              {/* Quick Demo Buttons */}
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-3">Demo: Quick scan existing assets</p>
-                <div className="flex flex-wrap gap-2">
+              {/* Quick Demo Buttons with Modern Styling */}
+              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-600 mb-3 font-medium">Demo: Quick scan existing assets</p>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => simulateQRScan('CORE-DD250-001')}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
                   >
-                    Hilti Core Drill
+                    <span className="font-medium">Hilti Core Drill</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => simulateQRScan('SAW-K770-001')}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
                   >
-                    Husqvarna Saw
+                    <span className="font-medium">Husqvarna Saw</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => simulateQRScan('WALL-RS2-001')}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
                   >
-                    Pentruder Wall Saw
+                    <span className="font-medium">Pentruder Wall Saw</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => simulateQRScan('POWER-ICS25-001')}
+                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
+                  >
+                    <span className="font-medium">ICS Power Cutter</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -283,15 +384,25 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
                       placeholder="e.g., CORE-DD250-001"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                       required
                     />
                     <button
                       type="submit"
                       disabled={loading}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center space-x-2 transform hover:scale-105"
                     >
-                      {loading ? 'Searching...' : 'Search'}
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Searching...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4" />
+                          <span>Search</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -305,7 +416,7 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                         key={id}
                         type="button"
                         onClick={() => setManualInput(id)}
-                        className="px-3 py-1 bg-white text-gray-700 rounded border text-sm hover:bg-gray-50"
+                        className="px-3 py-1 bg-white text-gray-700 rounded border text-sm hover:bg-gray-50 transition-all duration-200 transform hover:scale-105"
                       >
                         {id}
                       </button>
@@ -318,22 +429,22 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
 
           {/* Status Messages */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3 animate-pulse">
               <AlertCircle className="h-5 w-5 text-red-500" />
               <p className="text-red-700">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3">
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3 animate-bounce">
               <CheckCircle className="h-5 w-5 text-green-500" />
               <p className="text-green-700">{success}</p>
             </div>
           )}
 
           {/* Found Asset Preview */}
-          {foundAsset && (
-            <div className="bg-gray-50 rounded-lg p-6">
+          {foundAsset && !isTransitioning && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200 animate-fade-in">
               <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <span>Asset Found!</span>
@@ -357,14 +468,14 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                 
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(foundAsset.status)}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(foundAsset.status)}`}>
                     {foundAsset.status.replace('_', ' ')}
                   </span>
                 </div>
                 
                 <div>
                   <p className="text-sm text-gray-600">Location</p>
-                  <p>{foundAsset.location?.name || 'Unassigned'}</p>
+                  <p>{getStringValue(foundAsset.location) || 'Unassigned'}</p>
                 </div>
                 
                 <div>
@@ -373,10 +484,10 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                 </div>
               </div>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-blue-700 text-sm text-center">
-                  <Zap className="h-4 w-4 inline mr-1" />
-                  Opening detailed view in 1.5 seconds...
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-blue-700 text-sm text-center flex items-center justify-center space-x-2">
+                  <Zap className="h-4 w-4" />
+                  <span>Preparing detailed view...</span>
                 </p>
               </div>
             </div>

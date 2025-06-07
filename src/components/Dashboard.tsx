@@ -44,12 +44,12 @@ type DashboardAsset = {
   model?: string;
   category?: string;
   status: 'available' | 'in_use' | 'maintenance' | 'offline';
-  location?: string;
+  location?: string | { name: string }; // Handle both string and object types
   current_location_id?: string;
   purchase_price?: number;
   qr_code?: string;
   last_updated?: string;
-  assigned_to?: string;
+  assigned_to?: string | { name: string }; // Handle both string and object types
   serial_number?: string;
   purchase_date?: string;
   next_maintenance?: string;
@@ -84,6 +84,14 @@ const Dashboard: React.FC = () => {
 
   const { signOut } = useAuth();
   const { toast } = useToast();
+
+  // Helper function to safely extract string values from potential objects
+  const getStringValue = (value: string | { name: string } | undefined): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return '';
+  };
 
   // Status Configuration with 2025 Design Elements
   const statusConfig = {
@@ -165,7 +173,7 @@ const Dashboard: React.FC = () => {
       filtered = filtered.filter(asset =>
         asset.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getStringValue(asset.location).toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -467,7 +475,9 @@ const Dashboard: React.FC = () => {
                     {/* Location */}
                     <div className="flex items-center space-x-2 text-sm">
                       <MapPin className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-600 dark:text-slate-400">{asset.location || 'Unknown Location'}</span>
+                      <span className="text-slate-600 dark:text-slate-400">
+                        {getStringValue(asset.location) || 'Unknown Location'}
+                      </span>
                     </div>
 
                     {/* Last Updated */}
@@ -591,7 +601,11 @@ const Dashboard: React.FC = () => {
         <BulkOperationsModal
           isOpen={showBulkOperations}
           onClose={() => setShowBulkOperations(false)}
-          assets={filteredAssets}
+          assets={filteredAssets.map(asset => ({
+            ...asset,
+            location: getStringValue(asset.location),
+            assigned_to: getStringValue(asset.assigned_to)
+          }))}
           onAssetsUpdated={fetchAssets}
         />
       )}

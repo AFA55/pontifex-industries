@@ -26,13 +26,13 @@ interface Asset {
   name: string;
   category: string;
   status: 'available' | 'in_use' | 'maintenance' | 'offline';
-  location: string;
+  location: string | { name: string }; // Handle both string and object types
   qr_code: string;
   serial_number?: string;
   brand?: string;
   model?: string;
   description?: string;
-  assigned_to?: string;
+  assigned_to?: string | { name: string }; // Handle both string and object types
   purchase_date?: string;
   last_updated?: string;
   created_at?: string;
@@ -55,6 +55,14 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [editedAsset, setEditedAsset] = useState<Asset>(asset);
   const { toast } = useToast();
+
+  // Helper function to safely extract string values from potential objects
+  const getStringValue = (value: string | { name: string } | undefined): string => {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.name) return value.name;
+    return '';
+  };
 
   // Status configuration
   const statusConfig = {
@@ -101,12 +109,12 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
           name: editedAsset.name,
           category: editedAsset.category,
           status: editedAsset.status,
-          location: editedAsset.location,
+          location: getStringValue(editedAsset.location),
           serial_number: editedAsset.serial_number,
           brand: editedAsset.brand,
           model: editedAsset.model,
           description: editedAsset.description,
-          assigned_to: editedAsset.assigned_to,
+          assigned_to: getStringValue(editedAsset.assigned_to),
           last_updated: new Date().toISOString()
         })
         .eq('id', asset.id);
@@ -407,7 +415,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
                   <input
                     id="asset-location"
                     type="text"
-                    value={editedAsset.location}
+                    value={getStringValue(editedAsset.location)}
                     onChange={(e) => setEditedAsset({...editedAsset, location: e.target.value})}
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     placeholder="Enter location"
@@ -416,7 +424,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
                   <div className="flex items-center space-x-2 py-3">
                     <MapPin className="w-4 h-4 text-slate-400" />
                     <span className="text-base text-slate-900 dark:text-white">
-                      {asset.location || 'Not specified'}
+                      {getStringValue(asset.location) || 'Not specified'}
                     </span>
                   </div>
                 )}
@@ -431,7 +439,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
                   <input
                     id="asset-assigned"
                     type="text"
-                    value={editedAsset.assigned_to || ''}
+                    value={getStringValue(editedAsset.assigned_to)}
                     onChange={(e) => setEditedAsset({...editedAsset, assigned_to: e.target.value})}
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     placeholder="Enter person or team"
@@ -440,7 +448,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
                   <div className="flex items-center space-x-2 py-3">
                     <User className="w-4 h-4 text-slate-400" />
                     <span className="text-base text-slate-900 dark:text-white">
-                      {asset.assigned_to || 'Unassigned'}
+                      {getStringValue(asset.assigned_to) || 'Unassigned'}
                     </span>
                   </div>
                 )}
