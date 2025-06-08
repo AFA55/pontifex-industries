@@ -132,40 +132,49 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
     }
   };
 
-  const downloadQRCode = () => {
-    // Create QR code download logic
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+const downloadQRCode = () => {
+  // Create QR code download logic
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = 200;
-    canvas.height = 200;
+  // Set canvas size
+  canvas.width = 200;
+  canvas.height = 200;
 
-    // Fill white background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 200, 200);
+  // Fill white background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 200, 200);
 
-    // Add simple QR placeholder (in real app, use QR library)
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(20, 20, 160, 160);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(40, 40, 120, 120);
-    
-    // Add asset info
-    ctx.fillStyle = '#000000';
-    ctx.font = 'bold 12px Inter';
-    ctx.textAlign = 'center';
-    ctx.fillText(asset.name, 100, 190);
+  // Add simple QR placeholder (in real app, use QR library)
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(20, 20, 160, 160);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(40, 40, 120, 120);
+  
+  // Add asset info
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 12px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText(asset.name, 100, 190);
 
-    // Download
-    const link = document.createElement('a');
-    link.download = `${asset.name}-qr-code.png`;
-    link.href = canvas.toDataURL();
-    link.click();
+  // Download
+  const link = document.createElement('a');
+  link.download = `${asset.name}-qr-code.png`;
+  link.href = canvas.toDataURL();
+  link.click();
 
-    toast({ title: "Success", description: "QR code downloaded" });
-  };
+  // UPDATED: Enhanced Toast Notification with Modern Design
+  const event = new CustomEvent('show-toast', {
+    detail: {
+      variant: 'success',
+      title: 'QR Code Downloaded!',
+      description: `${asset.name} QR code saved successfully`,
+      duration: 4000
+    }
+  })
+  window.dispatchEvent(event)
+};
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not specified';

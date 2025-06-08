@@ -40,14 +40,6 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
-  // Helper function to safely extract string values from potential objects
-  const getStringValue = (value: string | { name: string } | undefined): string => {
-    if (!value) return '';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value.name) return value.name;
-    return '';
-  };
-
   useEffect(() => {
     if (isOpen && isScanning) {
       startCamera()
@@ -171,26 +163,6 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
     onClose()
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'in_use':
-        return 'bg-orange-100 text-orange-800 border-orange-200'
-      case 'maintenance':
-        return 'bg-red-100 text-red-800 border-red-200'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price)
-  }
-
   // Simple QR scanning simulation (in real app, would use proper QR library)
   const simulateQRScan = (assetId: string) => {
     searchAsset(assetId)
@@ -199,207 +171,562 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
-        
-        {/* Transition Overlay */}
-        {isTransitioning && (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/95 to-teal-600/95 rounded-lg flex items-center justify-center z-10 backdrop-blur-sm">
-            <div className="text-center text-white">
-              {/* Smooth Loading Animation */}
-              <div className="relative mb-6">
-                <div className="w-20 h-20 mx-auto">
-                  <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+    <>
+      {/* FIXED: Bulletproof Responsive Modal with Perfect Centering */}
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+        style={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <div 
+          className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-screen overflow-y-auto relative"
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '0.75rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            width: '100%',
+            maxWidth: '48rem',
+            maxHeight: '95vh',
+            position: 'relative',
+            overflowY: 'auto'
+          }}
+        >
+          
+          {/* FIXED: Perfect Centered Transition Overlay */}
+          {isTransitioning && (
+            <div 
+              className="absolute inset-0 z-10 rounded-xl"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 10,
+                background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.98) 0%, rgba(20, 184, 166, 0.98) 100%)',
+                borderRadius: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {/* Perfect Centering Container */}
+              <div 
+                className="flex flex-col items-center justify-center text-center text-white p-8 w-full h-full"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  color: 'white',
+                  padding: '2rem',
+                  width: '100%',
+                  height: '100%'
+                }}
+              >
+                
+                {/* Modern Loading Animation */}
+                <div 
+                  className="relative mb-8"
+                  style={{
+                    position: 'relative',
+                    marginBottom: '2rem'
+                  }}
+                >
                   <div 
-                    className="absolute inset-0 rounded-full border-4 border-white border-r-transparent animate-spin"
+                    className="w-24 h-24 mx-auto"
                     style={{
-                      animationDuration: '1s'
+                      width: '6rem',
+                      height: '6rem',
+                      margin: '0 auto',
+                      position: 'relative'
                     }}
-                  ></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <QrCode className="w-8 h-8 text-white" />
+                  >
+                    {/* Outer Ring */}
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        border: '4px solid rgba(255, 255, 255, 0.2)',
+                        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                      }}
+                    ></div>
+                    {/* Spinning Ring */}
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        border: '4px solid white',
+                        borderRightColor: 'transparent',
+                        animation: 'spin 1.2s linear infinite'
+                      }}
+                    ></div>
+                    {/* Inner Icon */}
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <QrCode 
+                        style={{
+                          width: '2.5rem',
+                          height: '2.5rem',
+                          color: 'white',
+                          filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+                        }} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Asset Info Preview */}
-              {foundAsset && (
-                <div className="space-y-3 mb-6">
-                  <h3 className="text-xl font-bold text-white">
-                    {foundAsset.name}
-                  </h3>
-                  <p className="text-blue-100">
-                    #{foundAsset.serial_number || foundAsset.asset_id}
-                  </p>
-                  <div className="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="text-sm">Asset Located</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Progress Bar */}
-              <div className="w-64 mx-auto mb-4">
-                <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+                {/* Asset Info Preview - Perfectly Centered */}
+                {foundAsset && (
                   <div 
-                    className="bg-white h-full transition-all duration-300 ease-out rounded-full"
-                    style={{ width: `${transitionProgress}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm text-blue-100 mt-2">
-                  Loading asset details... {Math.round(transitionProgress)}%
-                </p>
-              </div>
-
-              {/* Speed Indicator */}
-              <div className="flex items-center justify-center space-x-2 text-sm text-blue-100">
-                <Zap className="w-4 h-4" />
-                <span>10x faster than traditional systems</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-t-lg">
-          <div className="flex items-center space-x-3">
-            <QrCode className="h-6 w-6" />
-            <div>
-              <h2 className="text-2xl font-bold">QR Scanner</h2>
-              <p className="text-blue-100">Lightning-fast asset lookup</p>
-            </div>
-            <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm flex items-center space-x-1">
-              <Zap className="h-3 w-3" />
-              <span>10x Faster</span>
-            </span>
-          </div>
-          <button 
-            onClick={handleClose}
-            className="text-white hover:text-gray-200 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          {/* Scanner Mode Toggle */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button
-              onClick={() => setIsScanning(true)}
-              className={`p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 ${
-                isScanning 
-                  ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-lg' 
-                  : 'border-gray-300 hover:border-blue-300 hover:shadow-md'
-              }`}
-            >
-              <Camera className="h-8 w-8 mx-auto mb-2" />
-              <p className="font-semibold">Scan QR Code</p>
-              <p className="text-sm text-gray-500">Use camera</p>
-            </button>
-
-            <button
-              onClick={() => setIsScanning(false)}
-              className={`p-4 rounded-lg border-2 transition-all duration-300 transform hover:scale-105 ${
-                !isScanning 
-                  ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-lg' 
-                  : 'border-gray-300 hover:border-blue-300 hover:shadow-md'
-              }`}
-            >
-              <Search className="h-8 w-8 mx-auto mb-2" />
-              <p className="font-semibold">Manual Entry</p>
-              <p className="text-sm text-gray-500">Type Asset ID</p>
-            </button>
-          </div>
-
-          {/* Camera Scanner */}
-          {isScanning && (
-            <div className="mb-6">
-              <div className="relative bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-64 object-cover"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="border-2 border-white border-dashed w-48 h-48 rounded-lg flex items-center justify-center animate-pulse">
-                    <QrCode className="h-16 w-16 text-white opacity-75" />
+                    className="w-full max-w-md mb-8"
+                    style={{
+                      width: '100%',
+                      maxWidth: '28rem',
+                      marginBottom: '2rem'
+                    }}
+                  >
+                    <div 
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: '1rem',
+                        padding: '1.5rem',
+                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                      }}
+                    >
+                      <h3 
+                        style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 'bold',
+                          color: 'white',
+                          marginBottom: '0.5rem',
+                          lineHeight: '1.3'
+                        }}
+                      >
+                        {foundAsset.name}
+                      </h3>
+                      <p 
+                        style={{
+                          color: 'rgba(191, 219, 254, 1)',
+                          fontSize: '1.125rem',
+                          marginBottom: '1rem'
+                        }}
+                      >
+                        #{foundAsset.serial_number || foundAsset.asset_id}
+                      </p>
+                      <div 
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                          backdropFilter: 'blur(8px)',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '9999px',
+                          border: '1px solid rgba(255, 255, 255, 0.3)'
+                        }}
+                      >
+                        <CheckCircle style={{ width: '1.25rem', height: '1.25rem' }} />
+                        <span style={{ fontWeight: '500' }}>Asset Located</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-white text-center text-sm bg-black bg-opacity-50 px-3 py-2 rounded">
-                    Position QR code within the frame
+                )}
+
+                {/* Modern Progress Bar */}
+                <div 
+                  className="w-full max-w-xs mb-6"
+                  style={{
+                    width: '100%',
+                    maxWidth: '20rem',
+                    marginBottom: '1.5rem'
+                  }}
+                >
+                  <div 
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      backdropFilter: 'blur(8px)',
+                      borderRadius: '9999px',
+                      height: '0.75rem',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255, 255, 255, 0.3)'
+                    }}
+                  >
+                    <div 
+                      style={{
+                        background: 'linear-gradient(90deg, white, rgba(191, 219, 254, 1))',
+                        height: '100%',
+                        borderRadius: '9999px',
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        width: `${transitionProgress}%`,
+                        transition: 'width 0.3s ease-out'
+                      }}
+                    ></div>
+                  </div>
+                  <p 
+                    style={{
+                      color: 'rgba(191, 219, 254, 1)',
+                      fontSize: '0.875rem',
+                      marginTop: '0.75rem',
+                      fontWeight: '500',
+                      textAlign: 'center'
+                    }}
+                  >
+                    Loading asset details... {Math.round(transitionProgress)}%
                   </p>
                 </div>
-              </div>
 
-              {/* Quick Demo Buttons with Modern Styling */}
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-gray-600 mb-3 font-medium">Demo: Quick scan existing assets</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => simulateQRScan('CORE-DD250-001')}
-                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
-                  >
-                    <span className="font-medium">Hilti Core Drill</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => simulateQRScan('SAW-K770-001')}
-                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
-                  >
-                    <span className="font-medium">Husqvarna Saw</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => simulateQRScan('WALL-RS2-001')}
-                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
-                  >
-                    <span className="font-medium">Pentruder Wall Saw</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => simulateQRScan('POWER-ICS25-001')}
-                    className="flex items-center justify-between px-3 py-2 bg-white text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-blue-200"
-                  >
-                    <span className="font-medium">ICS Power Cutter</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                {/* Speed Indicator - Centered */}
+                <div 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem',
+                    color: 'rgba(191, 219, 254, 1)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(8px)',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '9999px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                  }}
+                >
+                  <Zap 
+                    style={{
+                      width: '1.25rem',
+                      height: '1.25rem',
+                      color: '#fde047'
+                    }} 
+                  />
+                  <span style={{ fontWeight: '500' }}>10x faster than traditional systems</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Manual Input */}
-          {!isScanning && (
-            <form onSubmit={handleManualSearch} className="mb-6">
-              <div className="space-y-4">
+          {/* Header */}
+          <div 
+            className="flex items-center justify-between p-6 border-b text-white rounded-t-xl"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1.5rem',
+              borderBottom: '1px solid rgba(229, 231, 235, 1)',
+              background: 'linear-gradient(90deg, rgb(37, 99, 235), rgb(20, 184, 166))',
+              color: 'white',
+              borderTopLeftRadius: '0.75rem',
+              borderTopRightRadius: '0.75rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <QrCode style={{ height: '1.5rem', width: '1.5rem' }} />
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>QR Scanner</h2>
+                <p style={{ color: 'rgba(191, 219, 254, 1)', fontSize: '0.875rem', margin: 0 }}>Lightning-fast asset lookup</p>
+              </div>
+              <span 
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+              >
+                <Zap style={{ height: '0.75rem', width: '0.75rem' }} />
+                <span>10x Faster</span>
+              </span>
+            </div>
+            <button 
+              onClick={handleClose}
+              style={{
+                color: 'white',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <X style={{ height: '1.5rem', width: '1.5rem' }} />
+            </button>
+          </div>
+
+          <div style={{ padding: '1.5rem' }}>
+            {/* Scanner Mode Toggle */}
+            <div 
+              className="grid grid-cols-2 gap-4 mb-6"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '1rem',
+                marginBottom: '1.5rem'
+              }}
+            >
+              <button
+                onClick={() => setIsScanning(true)}
+                style={{
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  border: `2px solid ${isScanning ? 'rgb(59, 130, 246)' : 'rgb(209, 213, 219)'}`,
+                  backgroundColor: isScanning ? 'rgb(239, 246, 255)' : 'transparent',
+                  color: isScanning ? 'rgb(59, 130, 246)' : 'inherit',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  textAlign: 'center'
+                }}
+              >
+                <Camera style={{ height: '2rem', width: '2rem', margin: '0 auto 0.5rem' }} />
+                <p style={{ fontWeight: '600', margin: '0 0 0.25rem 0' }}>Scan QR Code</p>
+                <p style={{ fontSize: '0.875rem', color: 'rgb(107, 114, 128)', margin: 0 }}>Use camera</p>
+              </button>
+
+              <button
+                onClick={() => setIsScanning(false)}
+                style={{
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  border: `2px solid ${!isScanning ? 'rgb(59, 130, 246)' : 'rgb(209, 213, 219)'}`,
+                  backgroundColor: !isScanning ? 'rgb(239, 246, 255)' : 'transparent',
+                  color: !isScanning ? 'rgb(59, 130, 246)' : 'inherit',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  textAlign: 'center'
+                }}
+              >
+                <Search style={{ height: '2rem', width: '2rem', margin: '0 auto 0.5rem' }} />
+                <p style={{ fontWeight: '600', margin: '0 0 0.25rem 0' }}>Manual Entry</p>
+                <p style={{ fontSize: '0.875rem', color: 'rgb(107, 114, 128)', margin: 0 }}>Type Asset ID</p>
+              </button>
+            </div>
+
+            {/* Camera Scanner */}
+            {isScanning && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div 
+                  style={{
+                    position: 'relative',
+                    backgroundColor: 'black',
+                    borderRadius: '0.5rem',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: '16rem',
+                      objectFit: 'cover'
+                    }}
+                  />
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <div 
+                      style={{
+                        border: '2px dashed white',
+                        width: '12rem',
+                        height: '12rem',
+                        borderRadius: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                      }}
+                    >
+                      <QrCode style={{ height: '4rem', width: '4rem', color: 'rgba(255, 255, 255, 0.75)' }} />
+                    </div>
+                  </div>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '1rem',
+                      left: '1rem',
+                      right: '1rem'
+                    }}
+                  >
+                    <p 
+                      style={{
+                        color: 'white',
+                        textAlign: 'center',
+                        fontSize: '0.875rem',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        padding: '0.75rem',
+                        borderRadius: '0.25rem',
+                        margin: 0
+                      }}
+                    >
+                      Position QR code within the frame
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Demo Buttons */}
+                <div 
+                  style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: 'linear-gradient(90deg, rgb(239, 246, 255), rgb(240, 253, 250))',
+                    borderRadius: '0.5rem',
+                    border: '1px solid rgb(191, 219, 254)'
+                  }}
+                >
+                  <p style={{ fontSize: '0.875rem', color: 'rgb(75, 85, 99)', marginBottom: '0.75rem', fontWeight: '500' }}>
+                    Demo: Quick scan existing assets
+                  </p>
+                  <div 
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    {[
+                      { id: 'CORE-DD250-001', name: 'Hilti Core Drill' },
+                      { id: 'SAW-K770-001', name: 'Husqvarna Saw' },
+                      { id: 'WALL-RS2-001', name: 'Pentruder Wall Saw' },
+                      { id: 'POWER-ICS25-001', name: 'ICS Power Cutter' }
+                    ].map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => simulateQRScan(item.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.75rem',
+                          backgroundColor: 'white',
+                          color: 'rgb(29, 78, 216)',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.875rem',
+                          border: '1px solid rgb(191, 219, 254)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgb(239, 246, 255)'
+                          e.currentTarget.style.transform = 'scale(1.05)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white'
+                          e.currentTarget.style.transform = 'scale(1)'
+                        }}
+                      >
+                        <span style={{ fontWeight: '500' }}>{item.name}</span>
+                        <ArrowRight style={{ width: '1rem', height: '1rem' }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Input */}
+            {!isScanning && (
+              <form onSubmit={handleManualSearch} style={{ marginBottom: '1.5rem' }}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label 
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: 'rgb(55, 65, 81)',
+                      marginBottom: '0.5rem'
+                    }}
+                  >
                     Asset ID or QR Code
                   </label>
-                  <div className="flex space-x-3">
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <input
                       type="text"
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
                       placeholder="e.g., CORE-DD250-001"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                      style={{
+                        flex: 1,
+                        padding: '0.75rem',
+                        border: '1px solid rgb(209, 213, 219)',
+                        borderRadius: '0.375rem',
+                        outline: 'none',
+                        transition: 'all 0.2s'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = 'rgb(59, 130, 246)'
+                        e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'rgb(209, 213, 219)'
+                        e.target.style.boxShadow = 'none'
+                      }}
                       required
                     />
                     <button
                       type="submit"
                       disabled={loading}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center space-x-2 transform hover:scale-105"
+                      style={{
+                        backgroundColor: 'rgb(37, 99, 235)',
+                        color: 'white',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '0.375rem',
+                        border: 'none',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!loading) e.currentTarget.style.backgroundColor = 'rgb(29, 78, 216)'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!loading) e.currentTarget.style.backgroundColor = 'rgb(37, 99, 235)'
+                      }}
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 style={{ width: '1rem', height: '1rem', animation: 'spin 1s linear infinite' }} />
                           <span>Searching...</span>
                         </>
                       ) : (
                         <>
-                          <Search className="w-4 h-4" />
+                          <Search style={{ width: '1rem', height: '1rem' }} />
                           <span>Search</span>
                         </>
                       )}
@@ -408,109 +735,141 @@ export default function QRScannerModal({ isOpen, onClose, onAssetFound }: QRScan
                 </div>
 
                 {/* Quick Asset ID Examples */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-2">Try these Asset IDs:</p>
-                  <div className="flex flex-wrap gap-2">
+                <div 
+                  style={{
+                    backgroundColor: 'rgb(249, 250, 251)',
+                    padding: '1rem',
+                    borderRadius: '0.5rem',
+                    marginTop: '1rem'
+                  }}
+                >
+                  <p style={{ fontSize: '0.875rem', color: 'rgb(75, 85, 99)', marginBottom: '0.5rem' }}>
+                    Try these Asset IDs:
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {['CORE-DD250-001', 'SAW-K770-001', 'WALL-RS2-001', 'POWER-ICS25-001'].map(id => (
                       <button
                         key={id}
                         type="button"
                         onClick={() => setManualInput(id)}
-                        className="px-3 py-1 bg-white text-gray-700 rounded border text-sm hover:bg-gray-50 transition-all duration-200 transform hover:scale-105"
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          backgroundColor: 'white',
+                          color: 'rgb(55, 65, 81)',
+                          borderRadius: '0.25rem',
+                          border: '1px solid rgb(209, 213, 219)',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgb(249, 250, 251)'
+                          e.currentTarget.style.transform = 'scale(1.05)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white'
+                          e.currentTarget.style.transform = 'scale(1)'
+                        }}
                       >
                         {id}
                       </button>
                     ))}
                   </div>
                 </div>
+              </form>
+            )}
+
+            {/* Status Messages */}
+            {error && (
+              <div 
+                style={{
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  backgroundColor: 'rgb(254, 242, 242)',
+                  border: '1px solid rgb(252, 165, 165)',
+                  borderRadius: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}
+              >
+                <AlertCircle style={{ height: '1.25rem', width: '1.25rem', color: 'rgb(239, 68, 68)' }} />
+                <p style={{ color: 'rgb(185, 28, 28)', margin: 0 }}>{error}</p>
               </div>
-            </form>
-          )}
+            )}
 
-          {/* Status Messages */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3 animate-pulse">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              <p className="text-red-700">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3 animate-bounce">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <p className="text-green-700">{success}</p>
-            </div>
-          )}
-
-          {/* Found Asset Preview */}
-          {foundAsset && !isTransitioning && (
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200 animate-fade-in">
-              <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span>Asset Found!</span>
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Asset ID</p>
-                  <p className="font-semibold">{foundAsset.asset_id}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="font-semibold">{foundAsset.name}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-600">Brand & Model</p>
-                  <p>{foundAsset.brand} {foundAsset.model}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-600">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(foundAsset.status)}`}>
-                    {foundAsset.status.replace('_', ' ')}
-                  </span>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p>{getStringValue(foundAsset.location) || 'Unassigned'}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-gray-600">Value</p>
-                  <p className="font-semibold text-green-600">{formatPrice(foundAsset.purchase_price)}</p>
-                </div>
+            {success && (
+              <div 
+                style={{
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  backgroundColor: 'rgb(240, 253, 244)',
+                  border: '1px solid rgb(167, 243, 208)',
+                  borderRadius: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  animation: 'bounce 1s infinite'
+                }}
+              >
+                <CheckCircle style={{ height: '1.25rem', width: '1.25rem', color: 'rgb(34, 197, 94)' }} />
+                <p style={{ color: 'rgb(21, 128, 61)', margin: 0 }}>{success}</p>
               </div>
+            )}
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-blue-700 text-sm text-center flex items-center justify-center space-x-2">
-                  <Zap className="h-4 w-4" />
-                  <span>Preparing detailed view...</span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Speed Comparison */}
-          <div className="mt-6 bg-gradient-to-r from-blue-50 to-teal-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-gray-800 mb-2">⚡ Pontifex Speed Advantage</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-600">Hilti ON!Track:</p>
-                <p className="font-semibold text-red-600">~30 seconds per lookup</p>
-                <p className="text-xs text-gray-500">Multiple screens, slow loading</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Pontifex Industries:</p>
-                <p className="font-semibold text-green-600">~3 seconds per lookup</p>
-                <p className="text-xs text-gray-500">Instant scan, immediate results</p>
+            {/* Speed Comparison */}
+            <div 
+              style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: 'linear-gradient(90deg, rgb(239, 246, 255), rgb(240, 253, 250))',
+                borderRadius: '0.5rem',
+                border: '1px solid rgb(191, 219, 254)'
+              }}
+            >
+              <h4 style={{ fontWeight: '600', color: 'rgb(55, 65, 81)', marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>
+                ⚡ Pontifex Speed Advantage
+              </h4>
+              <div 
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '1rem',
+                  fontSize: '0.875rem'
+                }}
+              >
+                <div>
+                  <p style={{ color: 'rgb(75, 85, 99)', margin: '0 0 0.25rem 0' }}>Hilti ON!Track:</p>
+                  <p style={{ fontWeight: '600', color: 'rgb(220, 38, 38)', margin: '0 0 0.25rem 0' }}>~30 seconds per lookup</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgb(107, 114, 128)', margin: 0 }}>Multiple screens, slow loading</p>
+                </div>
+                <div>
+                  <p style={{ color: 'rgb(75, 85, 99)', margin: '0 0 0.25rem 0' }}>Pontifex Industries:</p>
+                  <p style={{ fontWeight: '600', color: 'rgb(34, 197, 94)', margin: '0 0 0.25rem 0' }}>~3 seconds per lookup</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgb(107, 114, 128)', margin: 0 }}>Instant scan, immediate results</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Add required CSS animations */}
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+          50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+        }
+      `}</style>
+    </>
   )
 }

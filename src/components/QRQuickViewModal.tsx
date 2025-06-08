@@ -1,7 +1,8 @@
+// src/components/QRQuickViewModal.tsx - UPDATED with Modern Toast
 'use client'
 
 import React, { useEffect, useRef } from 'react'
-import { X, Download, QrCode, Copy, CheckCircle, Wrench, MapPin } from 'lucide-react'
+import { X, Download, QrCode, Copy, CheckCircle, Wrench, MapPin, Sparkles } from 'lucide-react'
 
 interface QRQuickViewModalProps {
   isOpen: boolean
@@ -80,6 +81,17 @@ export default function QRQuickViewModal({ isOpen, onClose, asset }: QRQuickView
       link.download = `QR_${asset.asset_id || asset.name || 'asset'}.png`
       link.href = canvas.toDataURL()
       link.click()
+
+      // UPDATED: Modern Toast Notification with Enhanced Design
+      const event = new CustomEvent('show-toast', {
+        detail: {
+          variant: 'success',
+          title: `QR Code Downloaded!`,
+          description: `${asset.name || 'Asset'} QR code saved successfully`,
+          duration: 4000
+        }
+      })
+      window.dispatchEvent(event)
     }
   }
 
@@ -88,6 +100,17 @@ export default function QRQuickViewModal({ isOpen, onClose, asset }: QRQuickView
       await navigator.clipboard.writeText(asset.asset_id)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+
+      // UPDATED: Modern Toast for Copy Action
+      const event = new CustomEvent('show-toast', {
+        detail: {
+          variant: 'info',
+          title: 'Asset ID Copied!',
+          description: `${asset.asset_id} copied to clipboard`,
+          duration: 3000
+        }
+      })
+      window.dispatchEvent(event)
     }
   }
 
@@ -211,15 +234,19 @@ export default function QRQuickViewModal({ isOpen, onClose, asset }: QRQuickView
             </div>
           </div>
 
-          {/* Action Buttons - Construction-Worker Optimized */}
+          {/* Action Buttons - Enhanced Design */}
           <div className="grid grid-cols-1 gap-3">
-            {/* Download Button - Primary Action */}
+            {/* Download Button - Primary Action with Enhanced Styling */}
             <button
               onClick={handleDownload}
-              className="flex items-center justify-center space-x-3 w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white rounded-xl py-4 px-6 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 min-h-[56px]"
+              className="flex items-center justify-center space-x-3 w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white rounded-xl py-4 px-6 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 min-h-[56px] relative overflow-hidden group"
             >
-              <Download className="w-6 h-6" />
-              <span className="font-semibold text-lg">Download QR Code</span>
+              {/* Animated background effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              
+              <Download className="w-6 h-6 relative z-10" />
+              <span className="font-semibold text-lg relative z-10">Download QR Code</span>
+              <Sparkles className="w-5 h-5 relative z-10 opacity-70" />
             </button>
 
             {/* Close Button */}
@@ -231,17 +258,29 @@ export default function QRQuickViewModal({ isOpen, onClose, asset }: QRQuickView
             </button>
           </div>
 
-          {/* Usage Instructions */}
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          {/* Usage Instructions with Enhanced Design */}
+          <div className="mt-6 p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
             <h4 className="font-semibold text-yellow-800 mb-2 flex items-center space-x-2">
               <QrCode className="w-4 h-4" />
               <span>Usage Instructions</span>
             </h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Scan with any QR code reader</li>
-              <li>• Print and attach to equipment</li>
-              <li>• Works offline for asset identification</li>
-              <li>• Waterproof compatible when laminated</li>
+              <li className="flex items-start space-x-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></span>
+                <span>Scan with any QR code reader</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></span>
+                <span>Print and attach to equipment</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></span>
+                <span>Works offline for asset identification</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></span>
+                <span>Waterproof compatible when laminated</span>
+              </li>
             </ul>
           </div>
         </div>

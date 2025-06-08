@@ -1,3 +1,4 @@
+// src/hooks/use-toast.ts - UPDATED with Enhanced Toast System
 "use client"
 
 // Inspired by react-hot-toast library
@@ -8,14 +9,16 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000
 
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  variant?: 'default' | 'destructive' | 'success' | 'warning' | 'info'
+  duration?: number
 }
 
 const actionTypes = {
@@ -58,9 +61,10 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, duration: number = TOAST_REMOVE_DELAY) => {
   if (toastTimeouts.has(toastId)) {
-    return
+    clearTimeout(toastTimeouts.get(toastId))
+    toastTimeouts.delete(toastId)
   }
 
   const timeout = setTimeout(() => {
@@ -69,7 +73,7 @@ const addToRemoveQueue = (toastId: string) => {
       type: actionTypes.REMOVE_TOAST,
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, duration)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -96,10 +100,10 @@ export const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
-        addToRemoveQueue(toastId)
+        addToRemoveQueue(toastId, 300) // Quick dismiss
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, 300)
         })
       }
 
@@ -142,7 +146,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ duration = TOAST_REMOVE_DELAY, variant = 'default', ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -158,17 +162,60 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
+      variant,
       onOpenChange: (open) => {
         if (!open) dismiss()
       },
     },
   })
 
+  // Auto-dismiss after duration
+  if (duration > 0) {
+    addToRemoveQueue(id, duration)
+  }
+
   return {
     id: id,
     dismiss,
     update,
   }
+}
+
+// Enhanced toast functions
+function toastSuccess(title: string, description?: string, duration?: number) {
+  return toast({
+    variant: 'success',
+    title,
+    description,
+    duration,
+  })
+}
+
+function toastError(title: string, description?: string, duration?: number) {
+  return toast({
+    variant: 'destructive',
+    title,
+    description,
+    duration,
+  })
+}
+
+function toastWarning(title: string, description?: string, duration?: number) {
+  return toast({
+    variant: 'warning',
+    title,
+    description,
+    duration,
+  })
+}
+
+function toastInfo(title: string, description?: string, duration?: number) {
+  return toast({
+    variant: 'info',
+    title,
+    description,
+    duration,
+  })
 }
 
 function useToast() {
@@ -184,11 +231,34 @@ function useToast() {
     }
   }, [state])
 
+  // Enhanced toast event listener for custom events
+  React.useEffect(() => {
+    const handleCustomToast = (event: CustomEvent) => {
+      const { variant, title, description, duration } = event.detail
+      toast({
+        variant,
+        title,
+        description,
+        duration,
+      })
+    }
+
+    window.addEventListener('show-toast', handleCustomToast as EventListener)
+    
+    return () => {
+      window.removeEventListener('show-toast', handleCustomToast as EventListener)
+    }
+  }, [])
+
   return {
     ...state,
     toast,
+    success: toastSuccess,
+    error: toastError,
+    warning: toastWarning,
+    info: toastInfo,
     dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, toastSuccess, toastError, toastWarning, toastInfo }
