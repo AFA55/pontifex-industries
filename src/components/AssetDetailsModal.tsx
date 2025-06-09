@@ -1,4 +1,4 @@
-// src/components/AssetDetailsModal.tsx - MOBILE-OPTIMIZED VERSION
+// src/components/AssetDetailsModal.tsx - MOBILE-OPTIMIZED VERSION WITH FIXED TOASTS
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -27,6 +27,7 @@ interface Asset {
   category: string;
   status: 'available' | 'in_use' | 'maintenance' | 'offline';
   location: string | { name: string }; // Handle both string and object types
+  current_location_id?: string;
   qr_code: string;
   serial_number?: string;
   brand?: string;
@@ -36,6 +37,18 @@ interface Asset {
   purchase_date?: string;
   last_updated?: string;
   created_at?: string;
+}
+
+interface Location {
+  id: string;
+  name: string;
+  address?: string;
+  type?: string;
+}
+
+interface EditableAsset extends Asset {
+  current_location_id: string;
+  assigned_to: string;
 }
 
 interface AssetDetailsModalProps {
@@ -53,7 +66,14 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editedAsset, setEditedAsset] = useState<Asset>(asset);
+  const [editedAsset, setEditedAsset] = useState<EditableAsset>({
+    ...asset,
+    current_location_id: asset.current_location_id || '',
+    assigned_to: typeof asset.assigned_to === 'string' ? asset.assigned_to : ''
+  });
+  const [isDownloading, setIsDownloading] = useState(false); // ✅ Prevent multiple downloads
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
   const { toast } = useToast();
 
   // Helper function to safely extract string values from potential objects
@@ -97,8 +117,51 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
   };
 
   useEffect(() => {
-    setEditedAsset(asset);
-  }, [asset]);
+    setEditedAsset({
+      ...asset,
+      current_location_id: asset.current_location_id || '',
+      assigned_to: typeof asset.assigned_to === 'string' ? asset.assigned_to : ''
+    });
+    if (isOpen) {
+      loadLocations();
+      loadOperators();
+    }
+  }, [asset, isOpen]);
+
+  // ✅ Load locations from Supabase (same as BulkOperationsModal)
+  const loadLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('id, name, address, type')
+        .order('name');
+      
+      if (error) throw error;
+      setLocations(data || []);
+    } catch (error) {
+      console.error('Error loading locations:', error);
+    }
+  };
+
+  // ✅ Load real Pontifex Industries operators (same as BulkOperationsModal)
+  const loadOperators = async () => {
+    try {
+      // Real Pontifex Industries operators for authentic demo
+      setOperators([
+        { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
+        { id: 'user2', name: 'Skinny', role: 'Operator' },
+        { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
+        { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
+        { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
+        { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
+        { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
+        { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
+        { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
+      ]);
+    } catch (error) {
+      console.error('Error loading operators:', error);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -109,72 +172,105 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
           name: editedAsset.name,
           category: editedAsset.category,
           status: editedAsset.status,
-          location: getStringValue(editedAsset.location),
+          current_location_id: editedAsset.current_location_id || null,
           serial_number: editedAsset.serial_number,
           brand: editedAsset.brand,
           model: editedAsset.model,
           description: editedAsset.description,
-          assigned_to: getStringValue(editedAsset.assigned_to),
+          assigned_to: editedAsset.assigned_to === 'unassigned' ? null : editedAsset.assigned_to,
           last_updated: new Date().toISOString()
         })
         .eq('id', asset.id);
 
       if (error) throw error;
 
-      toast({ title: "Success", description: "Asset updated successfully" });
+      toast({ 
+        title: "Asset Updated", 
+        description: "Changes saved successfully",
+        variant: "default"
+      });
       setIsEditing(false);
       onAssetUpdated();
     } catch (error) {
       console.error('Error updating asset:', error);
-      toast({ title: "Error", description: "Failed to update asset", variant: "destructive" });
+      toast({ 
+        title: "Update Failed", 
+        description: "Failed to update asset", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
   };
 
-const downloadQRCode = () => {
-  // Create QR code download logic
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  // ✅ FIXED: Single QR download with proper event handling
+  const downloadQRCode = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent any default behavior
+    e.stopPropagation(); // Stop event bubbling
+    
+    if (isDownloading) return; // Prevent multiple rapid clicks
+    
+    setIsDownloading(true);
+    
+    try {
+      // Create QR code download logic
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
 
-  // Set canvas size
-  canvas.width = 200;
-  canvas.height = 200;
+      // Set canvas size
+      canvas.width = 300;
+      canvas.height = 300;
 
-  // Fill white background
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, 200, 200);
+      // Fill white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 300);
 
-  // Add simple QR placeholder (in real app, use QR library)
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(20, 20, 160, 160);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(40, 40, 120, 120);
-  
-  // Add asset info
-  ctx.fillStyle = '#000000';
-  ctx.font = 'bold 12px Inter';
-  ctx.textAlign = 'center';
-  ctx.fillText(asset.name, 100, 190);
+      // Add simple QR placeholder (in real app, use QR library)
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(20, 20, 260, 260);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(40, 40, 220, 220);
+      
+      // Add asset info
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 16px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText(asset.name, 150, 270);
+      ctx.font = '12px Inter';
+      ctx.fillText(`#${asset.serial_number || 'N/A'}`, 150, 290);
 
-  // Download
-  const link = document.createElement('a');
-  link.download = `${asset.name}-qr-code.png`;
-  link.href = canvas.toDataURL();
-  link.click();
+      // Download the canvas as image
+      const link = document.createElement('a');
+      link.download = `${asset.name || 'asset'}-qr-code.png`;
+      link.href = canvas.toDataURL('image/png');
+      
+      // Use reliable download method
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-  // UPDATED: Enhanced Toast Notification with Modern Design
-  const event = new CustomEvent('show-toast', {
-    detail: {
-      variant: 'success',
-      title: 'QR Code Downloaded!',
-      description: `${asset.name} QR code saved successfully`,
-      duration: 4000
+      // ✅ SINGLE TOAST - Only one success notification
+      toast({
+        title: "QR Code Downloaded!",
+        description: `${asset.name} QR code saved successfully`,
+        variant: "default"
+      });
+
+    } catch (error) {
+      console.error('QR download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      // Reset download state after delay
+      setTimeout(() => {
+        setIsDownloading(false);
+      }, 1000);
     }
-  })
-  window.dispatchEvent(event)
-};
+  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not specified';
@@ -230,7 +326,7 @@ const downloadQRCode = () => {
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="p-2 sm:p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  className="p-2 sm:p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
                   aria-label="Save changes"
                 >
                   <Save className="w-5 h-5" />
@@ -421,14 +517,19 @@ const downloadQRCode = () => {
                   Location
                 </label>
                 {isEditing ? (
-                  <input
+                  <select
                     id="asset-location"
-                    type="text"
-                    value={getStringValue(editedAsset.location)}
-                    onChange={(e) => setEditedAsset({...editedAsset, location: e.target.value})}
+                    value={editedAsset.current_location_id || ''}
+                    onChange={(e) => setEditedAsset({...editedAsset, current_location_id: e.target.value})}
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    placeholder="Enter location"
-                  />
+                  >
+                    <option value="">Select Location</option>
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name} {location.address && `- ${location.address}`}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="flex items-center space-x-2 py-3">
                     <MapPin className="w-4 h-4 text-slate-400" />
@@ -445,14 +546,19 @@ const downloadQRCode = () => {
                   Assigned To
                 </label>
                 {isEditing ? (
-                  <input
+                  <select
                     id="asset-assigned"
-                    type="text"
-                    value={getStringValue(editedAsset.assigned_to)}
+                    value={editedAsset.assigned_to}
                     onChange={(e) => setEditedAsset({...editedAsset, assigned_to: e.target.value})}
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    placeholder="Enter person or team"
-                  />
+                  >
+                    <option value="">Select Operator</option>
+                    {operators.map((operator) => (
+                      <option key={operator.id} value={operator.id}>
+                        {operator.name} {operator.role && `(${operator.role})`}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <div className="flex items-center space-x-2 py-3">
                     <User className="w-4 h-4 text-slate-400" />
@@ -543,12 +649,18 @@ const downloadQRCode = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+              {/* ✅ FIXED: Download QR button with proper event handling */}
               <button
                 onClick={downloadQRCode}
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors min-h-[48px]"
+                disabled={isDownloading}
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all min-h-[48px] ${
+                  isDownloading 
+                    ? 'bg-gray-400 cursor-not-allowed text-white' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 <Download className="w-4 h-4" />
-                <span>Download QR</span>
+                <span>{isDownloading ? 'Downloading...' : 'Download QR'}</span>
               </button>
               
               {!isEditing && (

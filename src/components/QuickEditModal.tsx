@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { X, Save, CheckCircle, Circle, AlertTriangle, MapPin, User, MessageSquare, Zap, Wrench } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
@@ -22,6 +22,19 @@ interface QuickEditModalProps {
   onAssetUpdated: () => void
 }
 
+interface Location {
+  id: string
+  name: string
+  address?: string
+  type?: string
+}
+
+interface Operator {
+  id: string
+  name: string
+  role?: string
+}
+
 export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated }: QuickEditModalProps) {
   const [formData, setFormData] = useState({
     status: asset.status,
@@ -31,8 +44,8 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
   })
   
   const [loading, setLoading] = useState(false)
-  const [locations, setLocations] = useState<Array<{id: string, name: string}>>([])
-  const [users, setUsers] = useState<Array<{id: string, name: string, email: string}>>([])
+  const [locations, setLocations] = useState<Location[]>([])
+  const [users, setUsers] = useState<Operator[]>([])
   
   const { toast } = useToast()
 
@@ -80,6 +93,41 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
     }
   ]
 
+  // ✅ Load locations from Supabase (same as BulkOperationsModal)
+  const loadLocations = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('id, name, address, type')
+        .order('name')
+      
+      if (error) throw error
+      setLocations(data || [])
+    } catch (error) {
+      console.error('Error loading locations:', error)
+    }
+  }, [])
+
+  // ✅ Load real Pontifex Industries operators (same as BulkOperationsModal)
+  const loadUsers = useCallback(async () => {
+    try {
+      // Real Pontifex Industries operators for authentic demo
+      setUsers([
+        { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
+        { id: 'user2', name: 'Skinny', role: 'Operator' },
+        { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
+        { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
+        { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
+        { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
+        { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
+        { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
+        { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
+      ])
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }, [])
+
   // Load data on component mount
   useEffect(() => {
     if (isOpen) {
@@ -93,37 +141,7 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
         notes: ''
       })
     }
-  }, [isOpen, asset])
-
-  const loadLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name')
-        .order('name')
-      
-      if (error) throw error
-      setLocations(data || [])
-    } catch (error) {
-      console.error('Error loading locations:', error)
-    }
-  }
-
-  const loadUsers = async () => {
-    try {
-      // In real app, would load from users/profiles table
-      // For demo, using sample users
-      setUsers([
-        { id: 'user1', name: 'John Smith', email: 'john@pontifex.com' },
-        { id: 'user2', name: 'Maria Garcia', email: 'maria@pontifex.com' },
-        { id: 'user3', name: 'Mike Johnson', email: 'mike@pontifex.com' },
-        { id: 'user4', name: 'Sarah Chen', email: 'sarah@pontifex.com' },
-        { id: 'unassigned', name: 'Unassigned', email: '' }
-      ])
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }
+  }, [isOpen, asset, loadLocations, loadUsers])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -147,14 +165,18 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
 
       // Add activity log entry if notes provided
       if (formData.notes.trim()) {
-        await supabase
-          .from('asset_activities')
-          .insert([{
-            asset_id: asset.id,
-            activity_type: 'status_change',
-            description: `Status changed to ${formData.status}. Notes: ${formData.notes}`,
-            created_at: new Date().toISOString()
-          }])
+        try {
+          await supabase
+            .from('asset_activities')
+            .insert([{
+              asset_id: asset.id,
+              activity_type: 'status_change',
+              description: `Status changed to ${formData.status}. Notes: ${formData.notes}`,
+              created_at: new Date().toISOString()
+            }])
+        } catch (activityError) {
+          console.log('Activity logging failed (table may not exist):', activityError)
+        }
       }
 
       // Success!
@@ -258,7 +280,7 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
             </div>
           </div>
 
-          {/* Location Selection */}
+          {/* ✅ Location Selection - Dropdown like Bulk Operations */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               <MapPin className="w-4 h-4 inline mr-1" />
@@ -272,13 +294,13 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
               <option value="">Select Location</option>
               {locations.map((location) => (
                 <option key={location.id} value={location.id}>
-                  {location.name}
+                  {location.name} {location.address && `- ${location.address}`}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* User Assignment */}
+          {/* ✅ User Assignment - Dropdown with Real Operators like Bulk Operations */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               <User className="w-4 h-4 inline mr-1" />
@@ -289,10 +311,10 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
               onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 min-h-[56px]"
             >
-              <option value="">Select User</option>
+              <option value="">Select Operator</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.name} {user.email && `(${user.email})`}
+                  {user.name} {user.role && `(${user.role})`}
                 </option>
               ))}
             </select>
