@@ -1,7 +1,8 @@
+// src/components/QuickEditModal.tsx - UPDATED WITH BULK OPERATIONS DESIGN
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { X, Save, CheckCircle, Circle, AlertTriangle, MapPin, User, MessageSquare, Zap, Wrench } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Save, CheckCircle, Circle, AlertTriangle, MapPin, User, MessageSquare, Zap, Wrench, Users, Truck, Building } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
 
@@ -22,19 +23,6 @@ interface QuickEditModalProps {
   onAssetUpdated: () => void
 }
 
-interface Location {
-  id: string
-  name: string
-  address?: string
-  type?: string
-}
-
-interface Operator {
-  id: string
-  name: string
-  role?: string
-}
-
 export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated }: QuickEditModalProps) {
   const [formData, setFormData] = useState({
     status: asset.status,
@@ -44,8 +32,13 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
   })
   
   const [loading, setLoading] = useState(false)
-  const [locations, setLocations] = useState<Location[]>([])
-  const [users, setUsers] = useState<Operator[]>([])
+  const [locations, setLocations] = useState<Array<{id: string, name: string}>>([])
+  const [operators, setOperators] = useState<Array<{id: string, name: string, role?: string}>>([])
+  const [trucks, setTrucks] = useState<Array<{id: string, name: string}>>([])
+  
+  // Assignment type state (matching BulkOperations)
+  const [assignmentType, setAssignmentType] = useState<'operator' | 'truck' | 'west_shop' | 'east_shop' | 'other' | null>(null)
+  const [customLocation, setCustomLocation] = useState('')
   
   const { toast } = useToast()
 
@@ -93,46 +86,13 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
     }
   ]
 
-  // ✅ Load locations from Supabase (same as BulkOperationsModal)
-  const loadLocations = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name, address, type')
-        .order('name')
-      
-      if (error) throw error
-      setLocations(data || [])
-    } catch (error) {
-      console.error('Error loading locations:', error)
-    }
-  }, [])
-
-  // ✅ Load real Pontifex Industries operators (same as BulkOperationsModal)
-  const loadUsers = useCallback(async () => {
-    try {
-      // Real Pontifex Industries operators for authentic demo
-      setUsers([
-        { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
-        { id: 'user2', name: 'Skinny', role: 'Operator' },
-        { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
-        { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
-        { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
-        { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
-        { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
-        { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
-        { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
-      ])
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
-  }, [])
-
   // Load data on component mount
   useEffect(() => {
     if (isOpen) {
       loadLocations()
-      loadUsers()
+      loadOperators()
+      loadTrucks()
+      
       // Reset form data when asset changes
       setFormData({
         status: asset.status,
@@ -140,19 +100,93 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
         assigned_to: asset.assigned_to || '',
         notes: ''
       })
+      
+      // Determine current assignment type based on current assignment
+      if (asset.assigned_to === 'West Side Shop') {
+        setAssignmentType('west_shop')
+      } else if (asset.assigned_to === 'East Side Shop') {
+        setAssignmentType('east_shop')
+      } else if (asset.assigned_to && asset.assigned_to !== 'Unassigned') {
+        // Check if it's a truck or operator
+        // For now, default to operator if not a shop
+        setAssignmentType('operator')
+      }
     }
-  }, [isOpen, asset, loadLocations, loadUsers])
+  }, [isOpen, asset])
+
+  const loadLocations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('id, name')
+        .order('name')
+      
+      if (error) throw error
+      setLocations(data || [])
+    } catch (error) {
+      console.error('Error loading locations:', error)
+    }
+  }
+
+  const loadOperators = async () => {
+    // Real Pontifex Industries operators for authentic demo
+    setOperators([
+      { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
+      { id: 'user2', name: 'Skinny', role: 'Operator' },
+      { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
+      { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
+      { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
+      { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
+      { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
+      { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
+      { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
+    ])
+  }
+
+  const loadTrucks = async () => {
+    // Pontifex Industries fleet trucks
+    setTrucks([
+      { id: 'truck001', name: 'Truck 001' },
+      { id: 'truck002', name: 'Truck 002' },
+      { id: 'truck003', name: 'Truck 003' },
+      { id: 'truck004', name: 'Truck 004' },
+      { id: 'truck005', name: 'Truck 005' },
+      { id: 'truck006', name: 'Truck 006' },
+      { id: 'truck007', name: 'Truck 007' },
+      { id: 'truck008', name: 'Truck 008' },
+      { id: 'truck009', name: 'Truck 009' },
+      { id: 'truck010', name: 'Truck 010' }
+    ])
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
+      // Determine final assigned_to value based on assignment type
+      let finalAssignedTo = formData.assigned_to
+      
+      switch (assignmentType) {
+        case 'west_shop':
+          finalAssignedTo = 'West Side Shop'
+          break
+        case 'east_shop':
+          finalAssignedTo = 'East Side Shop'
+          break
+        case 'other':
+          finalAssignedTo = customLocation
+          break
+        default:
+          // Keep the selected operator/truck value
+          break
+      }
+
       // Update asset in database
       const updateData = {
         status: formData.status,
         current_location_id: formData.current_location_id || null,
-        assigned_to: formData.assigned_to === 'unassigned' ? null : formData.assigned_to,
+        assigned_to: finalAssignedTo === 'unassigned' ? null : finalAssignedTo,
         last_updated: new Date().toISOString()
       }
 
@@ -165,18 +199,14 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
 
       // Add activity log entry if notes provided
       if (formData.notes.trim()) {
-        try {
-          await supabase
-            .from('asset_activities')
-            .insert([{
-              asset_id: asset.id,
-              activity_type: 'status_change',
-              description: `Status changed to ${formData.status}. Notes: ${formData.notes}`,
-              created_at: new Date().toISOString()
-            }])
-        } catch (activityError) {
-          console.log('Activity logging failed (table may not exist):', activityError)
-        }
+        await supabase
+          .from('asset_activities')
+          .insert([{
+            asset_id: asset.id,
+            activity_type: 'status_change',
+            description: `Status changed to ${formData.status}. Notes: ${formData.notes}`,
+            created_at: new Date().toISOString()
+          }])
       }
 
       // Success!
@@ -280,7 +310,7 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
             </div>
           </div>
 
-          {/* ✅ Location Selection - Dropdown like Bulk Operations */}
+          {/* Location Selection */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               <MapPin className="w-4 h-4 inline mr-1" />
@@ -294,30 +324,133 @@ export default function QuickEditModal({ isOpen, onClose, asset, onAssetUpdated 
               <option value="">Select Location</option>
               {locations.map((location) => (
                 <option key={location.id} value={location.id}>
-                  {location.name} {location.address && `- ${location.address}`}
+                  {location.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* ✅ User Assignment - Dropdown with Real Operators like Bulk Operations */}
+          {/* Assignment Options - BulkOperations Style */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               <User className="w-4 h-4 inline mr-1" />
-              Assigned To
+              Assignment Options
             </label>
-            <select
-              value={formData.assigned_to}
-              onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 min-h-[56px]"
-            >
-              <option value="">Select Operator</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name} {user.role && `(${user.role})`}
-                </option>
-              ))}
-            </select>
+            
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+              {/* Assignment Type Selection - Matching BulkOperations */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assign To:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentType('operator')}
+                    className={`p-3 rounded-lg border transition-all text-sm ${
+                      assignmentType === 'operator'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                  >
+                    <Users className="w-4 h-4 mx-auto mb-1" />
+                    Operator
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentType('truck')}
+                    className={`p-3 rounded-lg border transition-all text-sm ${
+                      assignmentType === 'truck'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                  >
+                    <Truck className="w-4 h-4 mx-auto mb-1" />
+                    Truck
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentType('west_shop')}
+                    className={`p-3 rounded-lg border transition-all text-sm ${
+                      assignmentType === 'west_shop'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                  >
+                    <Building className="w-4 h-4 mx-auto mb-1" />
+                    West Shop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentType('east_shop')}
+                    className={`p-3 rounded-lg border transition-all text-sm ${
+                      assignmentType === 'east_shop'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                  >
+                    <MapPin className="w-4 h-4 mx-auto mb-1" />
+                    East Shop
+                  </button>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setAssignmentType('other')}
+                  className={`w-full mt-2 p-3 rounded-lg border transition-all text-sm ${
+                    assignmentType === 'other'
+                      ? 'border-blue-500 bg-blue-100 text-blue-700'
+                      : 'border-gray-300 hover:border-blue-300'
+                  }`}
+                >
+                  Other Location
+                </button>
+              </div>
+
+              {/* Specific Assignment Selection */}
+              {assignmentType === 'operator' && (
+                <select
+                  value={formData.assigned_to}
+                  onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Operator</option>
+                  {operators.map(operator => (
+                    <option key={operator.id} value={operator.name}>
+                      {operator.name} {operator.role && `(${operator.role})`}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {assignmentType === 'truck' && (
+                <select
+                  value={formData.assigned_to}
+                  onChange={(e) => setFormData(prev => ({ ...prev, assigned_to: e.target.value }))}
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Truck</option>
+                  {trucks.map(truck => (
+                    <option key={truck.id} value={truck.name}>
+                      {truck.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {assignmentType === 'other' && (
+                <div>
+                  <input
+                    type="text"
+                    value={customLocation}
+                    onChange={(e) => setCustomLocation(e.target.value)}
+                    placeholder="Enter custom location (e.g., 'ABC Repair Shop', 'Site C Storage')"
+                    className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Use for mechanic shops, temporary storage, or off-site locations
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Quick Notes */}

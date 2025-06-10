@@ -1,4 +1,4 @@
-// src/components/AssetDetailsModal.tsx - MOBILE-OPTIMIZED VERSION WITH FIXED TOASTS
+// src/components/AssetDetailsModal.tsx - UPDATED WITH BULK OPERATIONS DESIGN
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -12,43 +12,40 @@ import {
   MapPin, 
   Calendar, 
   User, 
-  Hash, 
   Tag,
   Wrench,
   CheckCircle,
   AlertTriangle,
   Circle,
-  Clock
+  Clock,
+  Users,
+  Truck,
+  Building
 } from 'lucide-react';
 
+// ===== INTERFACE DEFINITIONS (TOP LEVEL) =====
 interface Asset {
   id: string;
   name: string;
   category: string;
   status: 'available' | 'in_use' | 'maintenance' | 'offline';
-  location: string | { name: string }; // Handle both string and object types
-  current_location_id?: string;
+  location: string | { name: string };
   qr_code: string;
   serial_number?: string;
   brand?: string;
   model?: string;
   description?: string;
-  assigned_to?: string | { name: string }; // Handle both string and object types
+  assigned_to?: string | { name: string };
   purchase_date?: string;
   last_updated?: string;
   created_at?: string;
 }
 
-interface Location {
+interface Operator {
   id: string;
   name: string;
-  address?: string;
-  type?: string;
-}
-
-interface EditableAsset extends Asset {
-  current_location_id: string;
-  assigned_to: string;
+  email?: string;
+  role?: string;
 }
 
 interface AssetDetailsModalProps {
@@ -58,6 +55,7 @@ interface AssetDetailsModalProps {
   onAssetUpdated: () => void;
 }
 
+// ===== COMPONENT IMPLEMENTATION =====
 const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
   isOpen,
   onClose,
@@ -66,14 +64,14 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [editedAsset, setEditedAsset] = useState<EditableAsset>({
-    ...asset,
-    current_location_id: asset.current_location_id || '',
-    assigned_to: typeof asset.assigned_to === 'string' ? asset.assigned_to : ''
-  });
-  const [isDownloading, setIsDownloading] = useState(false); // ✅ Prevent multiple downloads
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [editedAsset, setEditedAsset] = useState<Asset>(asset);
   const [operators, setOperators] = useState<Operator[]>([]);
+  const [trucks, setTrucks] = useState<Array<{id: string, name: string}>>([]);
+  
+  // Assignment type state (matching BulkOperations)
+  const [assignmentType, setAssignmentType] = useState<'operator' | 'truck' | 'west_shop' | 'east_shop' | 'other' | null>(null);
+  const [customLocation, setCustomLocation] = useState('');
+  
   const { toast } = useToast();
 
   // Helper function to safely extract string values from potential objects
@@ -116,160 +114,171 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
     }
   };
 
+  // Load data on component mount
   useEffect(() => {
-    setEditedAsset({
-      ...asset,
-      current_location_id: asset.current_location_id || '',
-      assigned_to: typeof asset.assigned_to === 'string' ? asset.assigned_to : ''
-    });
     if (isOpen) {
-      loadLocations();
       loadOperators();
+      loadTrucks();
     }
+    setEditedAsset(asset);
   }, [asset, isOpen]);
 
-  // ✅ Load locations from Supabase (same as BulkOperationsModal)
-  const loadLocations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('locations')
-        .select('id, name, address, type')
-        .order('name');
-      
-      if (error) throw error;
-      setLocations(data || []);
-    } catch (error) {
-      console.error('Error loading locations:', error);
+  // Determine assignment type when operators/trucks are loaded
+  useEffect(() => {
+    if (operators.length > 0 && trucks.length > 0) {
+      const currentAssignment = getStringValue(asset.assigned_to);
+      if (currentAssignment === 'West Side Shop') {
+        setAssignmentType('west_shop');
+      } else if (currentAssignment === 'East Side Shop') {
+        setAssignmentType('east_shop');
+      } else if (trucks.some(truck => truck.name === currentAssignment)) {
+        setAssignmentType('truck');
+      } else if (operators.some(op => op.name === currentAssignment)) {
+        setAssignmentType('operator');
+      } else if (currentAssignment && currentAssignment !== 'Unassigned') {
+        setAssignmentType('other');
+        setCustomLocation(currentAssignment);
+      }
     }
-  };
+  }, [asset.assigned_to, operators, trucks]);
 
-  // ✅ Load real Pontifex Industries operators (same as BulkOperationsModal)
   const loadOperators = async () => {
-    try {
-      // Real Pontifex Industries operators for authentic demo
-      setOperators([
-        { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
-        { id: 'user2', name: 'Skinny', role: 'Operator' },
-        { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
-        { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
-        { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
-        { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
-        { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
-        { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
-        { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
-      ]);
-    } catch (error) {
-      console.error('Error loading operators:', error);
-    }
+    // Real Pontifex Industries operators for authentic demo
+    setOperators([
+      { id: 'user1', name: 'Andres Altamirano', role: 'Operator' },
+      { id: 'user2', name: 'Skinny', role: 'Operator' },
+      { id: 'user3', name: 'Leo Hernandez', role: 'Operator' },
+      { id: 'user4', name: 'Wynn Duncan', role: 'Operator' },
+      { id: 'user5', name: 'Rex Zaragoza', role: 'Operator' },
+      { id: 'user6', name: 'Brandon Ruiz', role: 'Operator' },
+      { id: 'user7', name: 'Lonnie Duncan', role: 'Operator' },
+      { id: 'user8', name: 'Gabriel Mora', role: 'Operator' },
+      { id: 'unassigned', name: 'Unassigned', role: 'Equipment Pool' }
+    ]);
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('assets')
-        .update({
-          name: editedAsset.name,
-          category: editedAsset.category,
-          status: editedAsset.status,
-          current_location_id: editedAsset.current_location_id || null,
-          serial_number: editedAsset.serial_number,
-          brand: editedAsset.brand,
-          model: editedAsset.model,
-          description: editedAsset.description,
-          assigned_to: editedAsset.assigned_to === 'unassigned' ? null : editedAsset.assigned_to,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', asset.id);
-
-      if (error) throw error;
-
-      toast({ 
-        title: "Asset Updated", 
-        description: "Changes saved successfully",
-        variant: "default"
-      });
-      setIsEditing(false);
-      onAssetUpdated();
-    } catch (error) {
-      console.error('Error updating asset:', error);
-      toast({ 
-        title: "Update Failed", 
-        description: "Failed to update asset", 
-        variant: "destructive" 
-      });
-    } finally {
-      setLoading(false);
-    }
+  const loadTrucks = async () => {
+    // Pontifex Industries fleet trucks
+    setTrucks([
+      { id: 'truck001', name: 'Truck 001' },
+      { id: 'truck002', name: 'Truck 002' },
+      { id: 'truck003', name: 'Truck 003' },
+      { id: 'truck004', name: 'Truck 004' },
+      { id: 'truck005', name: 'Truck 005' },
+      { id: 'truck006', name: 'Truck 006' },
+      { id: 'truck007', name: 'Truck 007' },
+      { id: 'truck008', name: 'Truck 008' },
+      { id: 'truck009', name: 'Truck 009' },
+      { id: 'truck010', name: 'Truck 010' }
+    ]);
   };
 
-  // ✅ FIXED: Single QR download with proper event handling
-  const downloadQRCode = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent any default behavior
-    e.stopPropagation(); // Stop event bubbling
+const handleSave = async () => {
+  setLoading(true);
+  try {
+    let finalAssignedTo = null;
+    let finalAssignedType = null;
     
-    if (isDownloading) return; // Prevent multiple rapid clicks
-    
-    setIsDownloading(true);
-    
-    try {
-      // Create QR code download logic
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
-
-      // Set canvas size
-      canvas.width = 300;
-      canvas.height = 300;
-
-      // Fill white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 300, 300);
-
-      // Add simple QR placeholder (in real app, use QR library)
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(20, 20, 260, 260);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(40, 40, 220, 220);
-      
-      // Add asset info
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 16px Inter';
-      ctx.textAlign = 'center';
-      ctx.fillText(asset.name, 150, 270);
-      ctx.font = '12px Inter';
-      ctx.fillText(`#${asset.serial_number || 'N/A'}`, 150, 290);
-
-      // Download the canvas as image
-      const link = document.createElement('a');
-      link.download = `${asset.name || 'asset'}-qr-code.png`;
-      link.href = canvas.toDataURL('image/png');
-      
-      // Use reliable download method
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // ✅ SINGLE TOAST - Only one success notification
-      toast({
-        title: "QR Code Downloaded!",
-        description: `${asset.name} QR code saved successfully`,
-        variant: "default"
-      });
-
-    } catch (error) {
-      console.error('QR download failed:', error);
-      toast({
-        title: "Download Failed",
-        description: "Please try again",
-        variant: "destructive"
-      });
-    } finally {
-      // Reset download state after delay
-      setTimeout(() => {
-        setIsDownloading(false);
-      }, 1000);
+    switch (assignmentType) {
+      case 'west_shop':
+        finalAssignedTo = null; // No UUID for shops
+        finalAssignedType = 'shop';
+        break;
+      case 'east_shop':
+        finalAssignedTo = null; // No UUID for shops  
+        finalAssignedType = 'shop';
+        break;
+      case 'other':
+        finalAssignedTo = null; // No UUID for custom locations
+        finalAssignedType = 'other';
+        break;
+      case 'operator':
+        // Find the operator's UUID from the operators list
+        const selectedOperator = operators.find(op => op.name === getStringValue(editedAsset.assigned_to));
+        finalAssignedTo = selectedOperator ? selectedOperator.id : null;
+        finalAssignedType = 'operator';
+        break;
+      case 'truck':
+        // Find the truck's UUID from the trucks list  
+        const selectedTruck = trucks.find(truck => truck.name === getStringValue(editedAsset.assigned_to));
+        finalAssignedTo = selectedTruck ? selectedTruck.id : null;
+        finalAssignedType = 'truck';
+        break;
+      default:
+        finalAssignedTo = null;
+        finalAssignedType = null;
     }
+
+    console.log('Updating with:', { 
+      name: editedAsset.name,
+      category: editedAsset.category, 
+      status: editedAsset.status,
+      assigned_to: finalAssignedTo,
+      assigned_type: finalAssignedType
+    });
+
+    const { data, error } = await supabase
+      .from('assets')
+      .update({
+        name: editedAsset.name,
+        category: editedAsset.category,
+        status: editedAsset.status,
+        assigned_to: finalAssignedTo,
+        assigned_type: finalAssignedType,
+        last_updated: new Date().toISOString()
+      })
+      .eq('id', asset.id)
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    console.log('Success:', data);
+    toast({ title: "Success", description: "Asset updated successfully" });
+    setIsEditing(false);
+    onAssetUpdated();
+    
+  } catch (error) {
+    console.error('Error updating asset:', error);
+    toast({ title: "Error", description: "Failed to update asset", variant: "destructive" });
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const downloadQRCode = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 200;
+    canvas.height = 200;
+
+    // Fill white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 200, 200);
+
+    // Add simple QR placeholder
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(20, 20, 160, 160);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(40, 40, 120, 120);
+    
+    // Add asset info
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(asset.name, 100, 190);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `${asset.name}-qr-code.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+
+    toast({ title: "Success", description: "QR code downloaded" });
   };
 
   const formatDate = (dateString?: string) => {
@@ -290,10 +299,10 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Modal Content - Full screen on mobile, centered on desktop */}
+      {/* Modal Content */}
       <div className="relative w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] bg-white dark:bg-slate-800 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-screen">
         
-        {/* Header - Mobile Optimized */}
+        {/* Header */}
         <div className="flex-shrink-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 p-4 sm:p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4 min-w-0 flex-1">
@@ -326,7 +335,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="p-2 sm:p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                  className="p-2 sm:p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="Save changes"
                 >
                   <Save className="w-5 h-5" />
@@ -350,19 +359,10 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Extra bottom padding for better mobile scrolling */}
-          <div className="h-4 sm:h-0"></div>
         </div>
 
-        {/* Content - Scrollable with Mobile Spacing */}
-        <div 
-          className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6 sm:space-y-8" 
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            touchAction: 'pan-y'
-          }}
-        >
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6 sm:space-y-8">
           
           {/* Basic Information */}
           <div className="space-y-4 sm:space-y-6">
@@ -422,60 +422,6 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Brand & Model */}
-              <div className="space-y-2">
-                <label htmlFor="asset-brand" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Brand & Model
-                </label>
-                {isEditing ? (
-                  <input
-                    id="asset-brand"
-                    type="text"
-                    value={`${editedAsset.brand || ''} ${editedAsset.model || ''}`.trim()}
-                    onChange={(e) => {
-                      const [brand, ...modelParts] = e.target.value.split(' ');
-                      setEditedAsset({
-                        ...editedAsset, 
-                        brand: brand || '',
-                        model: modelParts.join(' ')
-                      });
-                    }}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    placeholder="e.g. Hilti DD260"
-                  />
-                ) : (
-                  <p className="text-base text-slate-900 dark:text-white py-3">
-                    {`${asset.brand || ''} ${asset.model || ''}`.trim() || 'Not specified'}
-                  </p>
-                )}
-              </div>
-
-              {/* Serial Number */}
-              <div className="space-y-2">
-                <label htmlFor="asset-serial" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Serial Number
-                </label>
-                {isEditing ? (
-                  <input
-                    id="asset-serial"
-                    type="text"
-                    value={editedAsset.serial_number || ''}
-                    onChange={(e) => setEditedAsset({...editedAsset, serial_number: e.target.value})}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                    placeholder="Enter serial number"
-                  />
-                ) : (
-                  <div className="flex items-center space-x-2 py-3">
-                    <Hash className="w-4 h-4 text-slate-400" />
-                    <span className="text-base text-slate-900 dark:text-white font-mono">
-                      {asset.serial_number || 'Not specified'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Status */}
             <div className="space-y-2">
               <label htmlFor="asset-status" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -504,71 +450,158 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Location & Assignment */}
+          {/* Location & Assignment - BulkOperations Style */}
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-3">
               Location & Assignment
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {/* Location */}
-              <div className="space-y-2">
-                <label htmlFor="asset-location" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Location
-                </label>
-                {isEditing ? (
-                  <select
-                    id="asset-location"
-                    value={editedAsset.current_location_id || ''}
-                    onChange={(e) => setEditedAsset({...editedAsset, current_location_id: e.target.value})}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+            {isEditing ? (
+              <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+                <h4 className="font-semibold mb-3">Assignment Options</h4>
+                
+                {/* Assignment Type Selection - Matching BulkOperations */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assign To:</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentType('operator')}
+                      className={`p-3 rounded-lg border transition-all text-sm ${
+                        assignmentType === 'operator'
+                          ? 'border-blue-500 bg-blue-100 text-blue-700'
+                          : 'border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      <Users className="w-4 h-4 mx-auto mb-1" />
+                      Operator
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentType('truck')}
+                      className={`p-3 rounded-lg border transition-all text-sm ${
+                        assignmentType === 'truck'
+                          ? 'border-blue-500 bg-blue-100 text-blue-700'
+                          : 'border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      <Truck className="w-4 h-4 mx-auto mb-1" />
+                      Truck
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentType('west_shop')}
+                      className={`p-3 rounded-lg border transition-all text-sm ${
+                        assignmentType === 'west_shop'
+                          ? 'border-blue-500 bg-blue-100 text-blue-700'
+                          : 'border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      <Building className="w-4 h-4 mx-auto mb-1" />
+                      West Shop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAssignmentType('east_shop')}
+                      className={`p-3 rounded-lg border transition-all text-sm ${
+                        assignmentType === 'east_shop'
+                          ? 'border-blue-500 bg-blue-100 text-blue-700'
+                          : 'border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      <MapPin className="w-4 h-4 mx-auto mb-1" />
+                      East Shop
+                    </button>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentType('other')}
+                    className={`w-full mt-2 p-3 rounded-lg border transition-all text-sm ${
+                      assignmentType === 'other'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
+                    }`}
                   >
-                    <option value="">Select Location</option>
-                    {locations.map((location) => (
-                      <option key={location.id} value={location.id}>
-                        {location.name} {location.address && `- ${location.address}`}
+                    Other Location
+                  </button>
+                </div>
+
+                {/* Specific Assignment Selection */}
+                {assignmentType === 'operator' && (
+                  <select
+                    value={getStringValue(editedAsset.assigned_to)}
+                    onChange={(e) => setEditedAsset({...editedAsset, assigned_to: e.target.value})}
+                    className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Operator</option>
+                    {operators.map(operator => (
+                      <option key={operator.id} value={operator.name}>
+                        {operator.name} {operator.role && `(${operator.role})`}
                       </option>
                     ))}
                   </select>
-                ) : (
+                )}
+
+                {assignmentType === 'truck' && (
+                  <select
+                    value={getStringValue(editedAsset.assigned_to)}
+                    onChange={(e) => setEditedAsset({...editedAsset, assigned_to: e.target.value})}
+                    className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Truck</option>
+                    {trucks.map(truck => (
+                      <option key={truck.id} value={truck.name}>
+                        {truck.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {assignmentType === 'other' && (
+                  <div>
+                    <input
+                      type="text"
+                      value={customLocation}
+                      onChange={(e) => setCustomLocation(e.target.value)}
+                      placeholder="Enter custom location (e.g., 'ABC Repair Shop', 'Site C Storage')"
+                      className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-600 mt-1">
+                      Use for mechanic shops, temporary storage, or off-site locations
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Current Location Display */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Location
+                  </label>
                   <div className="flex items-center space-x-2 py-3">
                     <MapPin className="w-4 h-4 text-slate-400" />
                     <span className="text-base text-slate-900 dark:text-white">
                       {getStringValue(asset.location) || 'Not specified'}
                     </span>
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Assigned To */}
-              <div className="space-y-2">
-                <label htmlFor="asset-assigned" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Assigned To
-                </label>
-                {isEditing ? (
-                  <select
-                    id="asset-assigned"
-                    value={editedAsset.assigned_to}
-                    onChange={(e) => setEditedAsset({...editedAsset, assigned_to: e.target.value})}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                  >
-                    <option value="">Select Operator</option>
-                    {operators.map((operator) => (
-                      <option key={operator.id} value={operator.id}>
-                        {operator.name} {operator.role && `(${operator.role})`}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
+                {/* Current Assignment Display */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Assigned To
+                  </label>
                   <div className="flex items-center space-x-2 py-3">
                     <User className="w-4 h-4 text-slate-400" />
                     <span className="text-base text-slate-900 dark:text-white">
                       {getStringValue(asset.assigned_to) || 'Unassigned'}
                     </span>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Description */}
@@ -632,7 +665,7 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Actions - Mobile Optimized */}
+        {/* Footer Actions */}
         <div className="flex-shrink-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4">
             
@@ -649,18 +682,12 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-              {/* ✅ FIXED: Download QR button with proper event handling */}
               <button
                 onClick={downloadQRCode}
-                disabled={isDownloading}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all min-h-[48px] ${
-                  isDownloading 
-                    ? 'bg-gray-400 cursor-not-allowed text-white' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
+                className="flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors min-h-[48px]"
               >
                 <Download className="w-4 h-4" />
-                <span>{isDownloading ? 'Downloading...' : 'Download QR'}</span>
+                <span>Download QR</span>
               </button>
               
               {!isEditing && (
@@ -680,4 +707,4 @@ const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
   );
 };
 
-export default AssetDetailsModal;
+export default AssetDetailsModal; 
