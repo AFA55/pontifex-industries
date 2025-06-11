@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx - WORLD-CLASS MOBILE-FIRST TRANSFORMATION
+// src/components/Dashboard.tsx - COMPLETE FILE WITH ASSIGNMENT DISPLAY
 'use client';
 
 /**
@@ -31,7 +31,8 @@ import {
   Circle,
   RefreshCw,
   Filter,
-  MoreVertical
+  MoreVertical,
+  User
 } from 'lucide-react';
 
 // Use generic type to avoid conflicts with other Asset definitions
@@ -50,6 +51,7 @@ type DashboardAsset = {
   qr_code?: string;
   last_updated?: string;
   assigned_to?: string | { name: string }; // Handle both string and object types
+  assigned_location?: string; // NEW: Text-based assignments
   serial_number?: string;
   purchase_date?: string;
   next_maintenance?: string;
@@ -177,7 +179,9 @@ const Dashboard: React.FC = () => {
         asset.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.model?.toLowerCase().includes(searchTerm.toLowerCase())
+        asset.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        asset.assigned_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getStringValue(asset.assigned_to).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -367,7 +371,7 @@ const Dashboard: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search assets, categories, locations..."
+                placeholder="Search assets, categories, locations, assignments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-500"
@@ -436,6 +440,10 @@ const Dashboard: React.FC = () => {
               const statusInfo = statusConfig[asset.status];
               const StatusIcon = statusInfo.icon;
               
+              // Get assignment display text
+              const assignmentDisplay = asset.assigned_location || getStringValue(asset.assigned_to) || 'Unassigned';
+              const isAssigned = assignmentDisplay !== 'Unassigned';
+              
               return (
                 <div
                   key={asset.id}
@@ -478,6 +486,17 @@ const Dashboard: React.FC = () => {
                       <span className="text-slate-600 dark:text-slate-400">
                         {getStringValue(asset.location) || 'Unknown Location'}
                       </span>
+                    </div>
+
+                    {/* ✅ NEW: Assignment Display */}
+                    <div className="flex items-center space-x-2 text-sm">
+                      <User className="w-4 h-4 text-slate-400" />
+                      <span className={`${isAssigned ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {assignmentDisplay}
+                      </span>
+                      {isAssigned && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      )}
                     </div>
 
                     {/* Last Updated */}
@@ -604,7 +623,7 @@ const Dashboard: React.FC = () => {
           assets={filteredAssets.map(asset => ({
             ...asset,
             location: getStringValue(asset.location),
-            assigned_to: getStringValue(asset.assigned_to)
+            assigned_to: asset.assigned_location || getStringValue(asset.assigned_to)
           }))}
           onAssetsUpdated={fetchAssets}
         />
