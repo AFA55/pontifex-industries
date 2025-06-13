@@ -1,4 +1,4 @@
-// src/components/Dashboard.tsx - COMPLETE FILE WITH ASSIGNMENT DISPLAY
+// src/components/Dashboard.tsx - WORLD-CLASS MOBILE-FIRST TRANSFORMATION
 'use client';
 
 /**
@@ -18,6 +18,7 @@ import QRQuickViewModal from './QRQuickViewModal';
 import QuickEditModal from './QuickEditModal';
 import QuickMoveModal from './QuickMoveModal';
 import BulkOperationsModal from './BulkOperationsModal';
+import BeaconScannerModal from './BeaconScannerModal'; // ✅ NEW IMPORT
 import { 
   Search, 
   Plus, 
@@ -32,7 +33,7 @@ import {
   RefreshCw,
   Filter,
   MoreVertical,
-  User
+  Bluetooth // ✅ NEW IMPORT
 } from 'lucide-react';
 
 // Use generic type to avoid conflicts with other Asset definitions
@@ -51,7 +52,6 @@ type DashboardAsset = {
   qr_code?: string;
   last_updated?: string;
   assigned_to?: string | { name: string }; // Handle both string and object types
-  assigned_location?: string; // NEW: Text-based assignments
   serial_number?: string;
   purchase_date?: string;
   next_maintenance?: string;
@@ -82,6 +82,7 @@ const Dashboard: React.FC = () => {
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showQuickMove, setShowQuickMove] = useState(false);
   const [showBulkOperations, setShowBulkOperations] = useState(false);
+  const [showBeaconScanner, setShowBeaconScanner] = useState(false); // ✅ NEW STATE
   const [refreshing, setRefreshing] = useState(false);
 
   const { signOut } = useAuth();
@@ -179,9 +180,7 @@ const Dashboard: React.FC = () => {
         asset.serial_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.assigned_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getStringValue(asset.assigned_to).toLowerCase().includes(searchTerm.toLowerCase())
+        asset.model?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -239,6 +238,17 @@ const Dashboard: React.FC = () => {
   const handleAssetClick = (asset: DashboardAsset) => {
     setSelectedAsset(asset);
     setShowDetailsModal(true);
+  };
+
+  // ✅ NEW: Beacon pairing success handler
+  const handleBeaconPaired = (beaconId: string, assetId: string) => {
+    console.log('Beacon paired:', beaconId, 'with asset:', assetId);
+    fetchAssets(); // Refresh asset list to show beacon assignments
+    toast({
+      title: "Beacon Paired Successfully!",
+      description: `Real-time tracking is now active for this asset`,
+      variant: "default"
+    });
   };
 
   return (
@@ -324,8 +334,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Construction Worker Optimized */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {/* ✅ UPDATED: Quick Actions - Construction Worker Optimized with BLE Scanner */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* QR Scanner - Prominent for field workers */}
           <button
             onClick={() => setShowQRScanner(true)}
@@ -350,6 +360,18 @@ const Dashboard: React.FC = () => {
             </div>
           </button>
 
+          {/* ✅ NEW: BLE Scanner */}
+          <button
+            onClick={() => setShowBeaconScanner(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/25"
+          >
+            <Bluetooth className="w-8 h-8" />
+            <div className="text-left">
+              <p className="font-semibold text-lg">BLE Scanner</p>
+              <p className="text-purple-100 text-sm">Pair M4P beacons</p>
+            </div>
+          </button>
+
           {/* Bulk Transfer */}
           <button
             onClick={() => setShowBulkOperations(true)}
@@ -371,7 +393,7 @@ const Dashboard: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search assets, categories, locations, assignments..."
+                placeholder="Search assets, categories, locations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900 dark:text-white placeholder-slate-500"
@@ -440,10 +462,6 @@ const Dashboard: React.FC = () => {
               const statusInfo = statusConfig[asset.status];
               const StatusIcon = statusInfo.icon;
               
-              // Get assignment display text
-              const assignmentDisplay = asset.assigned_location || getStringValue(asset.assigned_to) || 'Unassigned';
-              const isAssigned = assignmentDisplay !== 'Unassigned';
-              
               return (
                 <div
                   key={asset.id}
@@ -486,17 +504,6 @@ const Dashboard: React.FC = () => {
                       <span className="text-slate-600 dark:text-slate-400">
                         {getStringValue(asset.location) || 'Unknown Location'}
                       </span>
-                    </div>
-
-                    {/* ✅ NEW: Assignment Display */}
-                    <div className="flex items-center space-x-2 text-sm">
-                      <User className="w-4 h-4 text-slate-400" />
-                      <span className={`${isAssigned ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {assignmentDisplay}
-                      </span>
-                      {isAssigned && (
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      )}
                     </div>
 
                     {/* Last Updated */}
@@ -559,7 +566,7 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Modals */}
+      {/* ✅ UPDATED: Modals - Added BeaconScannerModal */}
       {showAddModal && (
         <AddAssetModal
           isOpen={showAddModal}
@@ -623,9 +630,18 @@ const Dashboard: React.FC = () => {
           assets={filteredAssets.map(asset => ({
             ...asset,
             location: getStringValue(asset.location),
-            assigned_to: asset.assigned_location || getStringValue(asset.assigned_to)
+            assigned_to: getStringValue(asset.assigned_to)
           }))}
           onAssetsUpdated={fetchAssets}
+        />
+      )}
+
+      {/* ✅ NEW: Beacon Scanner Modal */}
+      {showBeaconScanner && (
+        <BeaconScannerModal
+          isOpen={showBeaconScanner}
+          onClose={() => setShowBeaconScanner(false)}
+          onBeaconPaired={handleBeaconPaired}
         />
       )}
     </div>
