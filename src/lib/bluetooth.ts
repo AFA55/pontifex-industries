@@ -1,16 +1,17 @@
-// src/lib/bluetooth.ts - UPDATED WITHOUT NPM PACKAGE
+// src/lib/bluetooth.ts - UPDATED WITH MISSING FUNCTIONS
 
 export interface BeaconData {
   id: string
   name: string
   distance: number
   rssi: number
-  battery?: number
+  batteryLevel?: number
   lastSeen: Date
   manufacturer?: string
   txPower?: number
   temperature?: number
   humidity?: number
+  isConnected?: boolean
 }
 
 export interface AssetLocation {
@@ -85,10 +86,11 @@ class BluetoothService {
         name: device.name || 'Unknown',
         distance: this.calculateDistance(-65), // Simulated RSSI
         rssi: -65,
-        battery: await this.getBatteryLevel(server),
+        batteryLevel: await this.getBatteryLevel(server),
         lastSeen: new Date(),
         manufacturer: 'MOKOSmart',
-        txPower: -4
+        txPower: -4,
+        isConnected: true
       }
 
       // Notify callback with updated beacon data
@@ -105,7 +107,7 @@ class BluetoothService {
       const characteristic = await service.getCharacteristic('battery_level')
       const value = await characteristic.readValue()
       return value.getUint8(0)
-    } catch (error) {
+    } catch {
       console.log('Battery service not available')
       return 85 // Default battery level
     }
@@ -154,36 +156,39 @@ class BluetoothService {
         name: 'M4P Beacon 001',
         distance: 2.1,
         rssi: -55,
-        battery: 95,
+        batteryLevel: 95,
         lastSeen: new Date(),
         manufacturer: 'MOKOSmart',
         txPower: -4,
         temperature: 22.5,
-        humidity: 45
+        humidity: 45,
+        isConnected: true
       },
       {
         id: 'M4P-002', 
         name: 'M4P Beacon 002',
         distance: 5.8,
         rssi: -68,
-        battery: 78,
+        batteryLevel: 78,
         lastSeen: new Date(),
         manufacturer: 'MOKOSmart',
         txPower: -4,
         temperature: 21.8,
-        humidity: 48
+        humidity: 48,
+        isConnected: true
       },
       {
         id: 'M4P-003',
         name: 'M4P Beacon 003', 
         distance: 12.3,
         rssi: -82,
-        battery: 92,
+        batteryLevel: 92,
         lastSeen: new Date(),
         manufacturer: 'MOKOSmart',
         txPower: -4,
         temperature: 23.1,
-        humidity: 42
+        humidity: 42,
+        isConnected: false
       }
     ]
   }
@@ -191,3 +196,32 @@ class BluetoothService {
 
 // Export singleton instance
 export const bluetoothService = new BluetoothService()
+
+// ✅ ADD THESE MISSING UTILITY FUNCTIONS:
+
+// Helper function to format distance for display
+export const formatDistance = (distance: number): string => {
+  if (distance < 1) {
+    return `${Math.round(distance * 100)}cm`
+  } else if (distance < 10) {
+    return `${distance.toFixed(1)}m`
+  } else {
+    return `${Math.round(distance)}m`
+  }
+}
+
+// Get signal strength category from RSSI
+export const getSignalStrength = (rssi: number): 'excellent' | 'good' | 'fair' | 'poor' => {
+  if (rssi >= -50) return 'excellent'
+  if (rssi >= -65) return 'good' 
+  if (rssi >= -80) return 'fair'
+  return 'poor'
+}
+
+// Get color class for distance display
+export const getDistanceColor = (distance: number): string => {
+  if (distance < 2) return 'text-green-600'
+  if (distance < 5) return 'text-yellow-600'
+  if (distance < 10) return 'text-orange-600'
+  return 'text-red-600'
+}
