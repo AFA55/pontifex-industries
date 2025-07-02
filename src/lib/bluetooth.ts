@@ -1,227 +1,196 @@
-// src/lib/bluetooth.ts - UPDATED WITH MISSING FUNCTIONS
+// src/lib/bluetooth.ts - WORLD-CLASS HARDWARE INTEGRATION
+// CTO Note: This version integrates real M4P Pro beacon detection and gracefully falls back to simulation.
 
 export interface BeaconData {
-  id: string
-  name: string
-  distance: number
-  rssi: number
-  batteryLevel?: number
-  lastSeen: Date
-  manufacturer?: string
-  txPower?: number
-  temperature?: number
-  humidity?: number
-  isConnected?: boolean
+  id: string;
+  name: string;
+  distance: number;
+  rssi: number;
+  battery?: number;
+  lastSeen: Date;
+  manufacturer?: string;
+  txPower?: number;
+  // Temperature and humidity removed as they are not supported by M4P Pro beacons.
 }
 
-export interface AssetLocation {
-  beaconId: string
-  location: string
-  timestamp: Date
-  confidence: number // 0-100 based on signal strength
+// Utility function to format distance for display
+export function formatDistance(meters: number): string {
+  if (meters < 0) return 'Unknown';
+  if (meters < 1) return `${(meters * 100).toFixed(0)} cm`;
+  return `${meters.toFixed(1)} m`;
 }
+
+// Utility function to determine signal strength category
+export function getSignalStrength(rssi: number): 'excellent' | 'good' | 'fair' | 'poor' {
+  if (rssi > -60) return 'excellent';
+  if (rssi > -70) return 'good';
+  if (rssi > -80) return 'fair';
+  return 'poor';
+}
+
+// Utility function to get a color based on distance
+export function getDistanceColor(distance: number): string {
+  if (distance < 0) return 'text-gray-500';
+  if (distance < 3) return 'text-green-600';
+  if (distance < 10) return 'text-blue-600';
+  return 'text-orange-600';
+}
+
 
 class BluetoothService {
-  private scanning = false
-  private devices = new Map<string, BluetoothDevice>()
-  private scanCallback: (beacons: BeaconData[]) => void = () => {}
+  private scanning = false;
+  private devices = new Map<string, BluetoothDevice>();
+  private scanCallback: (beacons: BeaconData[]) => void = () => {};
 
-  // Initialize Web Bluetooth API
   async isBluetoothAvailable(): Promise<boolean> {
     try {
-      if (!navigator.bluetooth) {
-        console.warn('Web Bluetooth API not supported')
-        return false
+      if (typeof navigator === 'undefined' || !navigator.bluetooth) {
+        console.warn('Web Bluetooth API not supported in this browser or context.');
+        return false;
       }
-      
-      const available = await navigator.bluetooth.getAvailability()
-      return available
+      return await navigator.bluetooth.getAvailability();
     } catch (error) {
-      console.error('Bluetooth availability check failed:', error)
-      return false
+      console.error('Bluetooth availability check failed:', error);
+      return false;
     }
   }
 
-  // Start scanning for beacons
+  // Enhanced startScanning method to prioritize real hardware
   async startScanning(callback: (beacons: BeaconData[]) => void): Promise<void> {
-    if (this.scanning) return
+    if (this.scanning) return;
+
+    this.scanning = true;
+    this.scanCallback = callback;
+    console.log('Starting M4P Pro beacon scanning...');
 
     try {
-      // Request device with filters for our beacons
+      // Enhanced filters for real M4P Pro beacons as per the roadmap
       const device = await navigator.bluetooth!.requestDevice({
         filters: [
           { namePrefix: "M4P" },
-          { namePrefix: "PONTIFEX" },
+          { namePrefix: "MOKO" },
+          { namePrefix: "MOKOSmart" },
         ],
         optionalServices: [
-          'battery_service',
-          'device_information',
-          'environmental_sensing'
-        ]
-      })
+          'battery_service',       // 0x180F for battery level
+          'device_information',    // 0x180A for device info
+        ],
+      });
 
-      console.log('✅ Bluetooth scanning started')
-      this.scanning = true
-      this.scanCallback = callback
+      console.log('✅ M4P Beacon detected:', device.name, device.id);
+      await this.connectToM4PBeacon(device);
 
-      // Connect to the found device
-      await this.connectToDevice(device)
-    } catch (error) {
-      console.error('❌ Failed to start scanning:', error)
-      throw new Error('Bluetooth scanning failed. Please ensure Bluetooth is enabled.')
+    } catch (error: any) {
+      console.error('❌ M4P scanning failed:', error.name, error.message);
+
+      // Fallback to simulation if no hardware is found or user cancels
+      if (error.name === 'NotFoundError') {
+        console.warn('⚠️ No M4P beacons found, using simulation mode for development.');
+        this.simulateBeaconDetection(callback);
+      } else {
+        // Re-throw other critical errors
+        throw new Error('Bluetooth scanning failed. Please ensure Bluetooth is enabled and permissions are granted.');
+      }
     }
   }
 
-  // Connect to individual beacon
-  private async connectToDevice(device: BluetoothDevice): Promise<void> {
+  // New method specifically for connecting to and reading data from M4P beacons
+  async connectToM4PBeacon(device: BluetoothDevice): Promise<void> {
     try {
-      const server = await device.gatt?.connect()
-      if (!server) throw new Error('Failed to connect to GATT server')
+      const server = await device.gatt?.connect();
+      if (!server) throw new Error('Failed to connect to GATT server');
 
-      this.devices.set(device.id, device)
+      this.devices.set(device.id, device);
 
-      // Get device information
+      // Get battery level from the M4P beacon
+      let batteryLevel: number | undefined;
+      try {
+        const batteryService = await server.getPrimaryService('battery_service');
+        const batteryCharacteristic = await batteryService.getCharacteristic('battery_level');
+        const batteryValue = await batteryCharacteristic.readValue();
+        batteryLevel = batteryValue.getUint8(0);
+        console.log(`🔋 M4P Battery for ${device.name}:`, batteryLevel + '%');
+      } catch (e) {
+        console.warn('Battery service not available on this M4P beacon.');
+      }
+
+      // Get manufacturer name
+      let manufacturer = 'MOKOSmart'; // Default value
+      try {
+        const deviceInfoService = await server.getPrimaryService('device_information');
+        const manufacturerCharacteristic = await deviceInfoService.getCharacteristic('manufacturer_name_string');
+        const manufacturerValue = await manufacturerCharacteristic.readValue();
+        manufacturer = new TextDecoder().decode(manufacturerValue);
+      } catch (e) {
+        console.warn('Device info service not available on this M4P beacon.');
+      }
+
+      // Create beacon data with real M4P info
       const beaconData: BeaconData = {
         id: device.id,
-        name: device.name || 'Unknown',
-        distance: this.calculateDistance(-65), // Simulated RSSI
-        rssi: -65,
-        batteryLevel: await this.getBatteryLevel(server),
+        name: device.name || `M4P-${device.id.substring(0, 6)}`,
+        distance: 1.5, // Placeholder, will be updated from RSSI in a future step
+        rssi: -55,     // Placeholder
+        battery: batteryLevel,
         lastSeen: new Date(),
-        manufacturer: 'MOKOSmart',
-        txPower: -4,
-        isConnected: true
-      }
+        manufacturer: manufacturer,
+        txPower: -4, // M4P default TX power
+      };
 
-      // Notify callback with updated beacon data
-      this.scanCallback([beaconData])
+      // Notify the UI with the real beacon data
+      this.scanCallback([beaconData]);
+
     } catch (error) {
-      console.error('Connection error:', error)
+      console.error(`Failed to connect to M4P beacon ${device.id}:`, error);
+      throw error;
     }
   }
 
-  // Get battery level from device
-  private async getBatteryLevel(server: BluetoothRemoteGATTServer): Promise<number> {
-    try {
-      const service = await server.getPrimaryService('battery_service')
-      const characteristic = await service.getCharacteristic('battery_level')
-      const value = await characteristic.readValue()
-      return value.getUint8(0)
-    } catch {
-      console.log('Battery service not available')
-      return 85 // Default battery level
-    }
-  }
-
-  // Calculate distance from RSSI (simplified)
-  private calculateDistance(rssi: number): number {
-    // Simplified distance calculation for M4P beacons
-    // Real implementation would use beacon-specific calibration
-    const txPower = -4 // M4P typical TX power
-    if (rssi === 0) return -1.0
-    
-    const ratio = rssi * 1.0 / txPower
-    if (ratio < 1.0) {
-      return Math.pow(ratio, 10)
-    } else {
-      const accuracy = (0.89976) * Math.pow(ratio, 7.7095) + 0.111
-      return accuracy
-    }
-  }
-
-  // Stop scanning
-  stopScanning(): void {
-    this.scanning = false
-    this.scanCallback = () => {}
-    console.log('🛑 Bluetooth scanning stopped')
-  }
-
-  // Pair beacon with asset
-  async pairBeaconWithAsset(beaconId: string, assetId: string): Promise<boolean> {
-    try {
-      // This would integrate with your Supabase database
-      console.log(`Pairing beacon ${beaconId} with asset ${assetId}`)
-      return true
-    } catch (error) {
-      console.error('Pairing failed:', error)
-      return false
-    }
-  }
-
-  // Get simulated beacons for demo (while awaiting M4P hardware)
-  getSimulatedBeacons(): BeaconData[] {
-    return [
+  // This is your original simulation function, now used as a fallback
+  simulateBeaconDetection(callback: (beacons: BeaconData[]) => void) {
+    const simulatedBeacons: BeaconData[] = [
       {
-        id: 'M4P-001',
-        name: 'M4P Beacon 001',
+        id: 'SIM-M4P-001',
+        name: 'Simulated M4P Drill',
         distance: 2.1,
         rssi: -55,
-        batteryLevel: 95,
+        battery: 95,
         lastSeen: new Date(),
-        manufacturer: 'MOKOSmart',
+        manufacturer: 'MOKOSmart (Simulated)',
         txPower: -4,
-        temperature: 22.5,
-        humidity: 45,
-        isConnected: true
       },
       {
-        id: 'M4P-002', 
-        name: 'M4P Beacon 002',
+        id: 'SIM-M4P-002', 
+        name: 'Simulated M4P Saw',
         distance: 5.8,
         rssi: -68,
-        batteryLevel: 78,
+        battery: 78,
         lastSeen: new Date(),
-        manufacturer: 'MOKOSmart',
+        manufacturer: 'MOKOSmart (Simulated)',
         txPower: -4,
-        temperature: 21.8,
-        humidity: 48,
-        isConnected: true
-      },
-      {
-        id: 'M4P-003',
-        name: 'M4P Beacon 003', 
-        distance: 12.3,
-        rssi: -82,
-        batteryLevel: 92,
-        lastSeen: new Date(),
-        manufacturer: 'MOKOSmart',
-        txPower: -4,
-        temperature: 23.1,
-        humidity: 42,
-        isConnected: false
       }
-    ]
+    ];
+    callback(simulatedBeacons);
+  }
+
+  stopScanning(): void {
+    this.scanning = false;
+    this.devices.forEach(device => device.gatt?.disconnect());
+    this.devices.clear();
+    console.log('🛑 Bluetooth scanning stopped and all devices disconnected.');
+  }
+
+  async pairBeaconWithAsset(beaconId: string, assetId: string): Promise<boolean> {
+    try {
+      console.log(`Pairing beacon ${beaconId} with asset ${assetId}`);
+      // In a real scenario, this would involve a call to your Supabase backend
+      return true;
+    } catch (error) {
+      console.error('Pairing failed:', error);
+      return false;
+    }
   }
 }
 
-// Export singleton instance
-export const bluetoothService = new BluetoothService()
-
-// ✅ ADD THESE MISSING UTILITY FUNCTIONS:
-
-// Helper function to format distance for display
-export const formatDistance = (distance: number): string => {
-  if (distance < 1) {
-    return `${Math.round(distance * 100)}cm`
-  } else if (distance < 10) {
-    return `${distance.toFixed(1)}m`
-  } else {
-    return `${Math.round(distance)}m`
-  }
-}
-
-// Get signal strength category from RSSI
-export const getSignalStrength = (rssi: number): 'excellent' | 'good' | 'fair' | 'poor' => {
-  if (rssi >= -50) return 'excellent'
-  if (rssi >= -65) return 'good' 
-  if (rssi >= -80) return 'fair'
-  return 'poor'
-}
-
-// Get color class for distance display
-export const getDistanceColor = (distance: number): string => {
-  if (distance < 2) return 'text-green-600'
-  if (distance < 5) return 'text-yellow-600'
-  if (distance < 10) return 'text-orange-600'
-  return 'text-red-600'
-}
+// Export a singleton instance to be used across the application
+export const bluetoothService = new BluetoothService();
