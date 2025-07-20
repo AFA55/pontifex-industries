@@ -37,7 +37,7 @@ export function getDistanceColor(distance: number): string {
 }
 
 
-class BluetoothService {
+export class BluetoothService {
   private scanning = false;
   private devices = new Map<string, BluetoothDevice>();
   private scanCallback: (beacons: BeaconData[]) => void = () => {};
