@@ -110,7 +110,7 @@ export class BluetoothService {
         const batteryValue = await batteryCharacteristic.readValue();
         batteryLevel = batteryValue.getUint8(0);
         console.log(`🔋 M4P Battery for ${device.name}:`, batteryLevel + '%');
-      } catch (e) {
+      } catch {
         console.warn('Battery service not available on this M4P beacon.');
       }
 
@@ -121,7 +121,7 @@ export class BluetoothService {
         const manufacturerCharacteristic = await deviceInfoService.getCharacteristic('manufacturer_name_string');
         const manufacturerValue = await manufacturerCharacteristic.readValue();
         manufacturer = new TextDecoder().decode(manufacturerValue);
-      } catch (e) {
+      } catch {
         console.warn('Device info service not available on this M4P beacon.');
       }
 

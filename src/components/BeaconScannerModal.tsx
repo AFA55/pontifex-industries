@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { X, Bluetooth, Radar, Battery, MapPin, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { bluetoothService } from '@/lib/bluetooth'
+import { bluetoothService, getSignalStrength, getDistanceColor, formatDistance } from '@/lib/bluetooth'
 import { gatewayService } from '@/lib/gateway'
 import { useToast } from '@/hooks/use-toast'
 
@@ -461,17 +461,6 @@ export default function BeaconScannerModal({ isOpen, onClose, onBeaconPaired }: 
     return <div className={`${baseClass} bg-red-500 rounded-full`} />
   }
 
-  const formatDistance = (distance: number) => {
-    if (distance < 1) return `${(distance * 100).toFixed(0)}cm`
-    return `${distance.toFixed(1)}m`
-  }
-
-  const getDistanceColor = (distance: number) => {
-    if (distance < 2) return 'text-green-600'
-    if (distance < 10) return 'text-blue-600'
-    if (distance < 20) return 'text-orange-600'
-    return 'text-red-600'
-  }
 
   const getSourceIcon = (source?: string) => {
     return source === 'gateway' ? '🌐' : '📱'
