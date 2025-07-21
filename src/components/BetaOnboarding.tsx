@@ -218,7 +218,7 @@ export default function BetaOnboarding({ onComplete, onSkip }: BetaOnboardingPro
                   >
                     <Checkbox
                       checked={formData.primaryWorkTypes?.includes(workType) || false}
-                      readOnly
+                      disabled
                     />
                     <span className="text-sm">{workType}</span>
                   </div>
@@ -302,7 +302,7 @@ export default function BetaOnboarding({ onComplete, onSkip }: BetaOnboardingPro
                       >
                         <Checkbox
                           checked={formData.deviceTypes?.includes(device) || false}
-                          readOnly
+                          disabled
                         />
                         <span className="text-sm">{device}</span>
                       </div>
@@ -365,7 +365,7 @@ export default function BetaOnboarding({ onComplete, onSkip }: BetaOnboardingPro
                       >
                         <Checkbox
                           checked={formData.testingGoals?.includes(goal) || false}
-                          readOnly
+                          disabled
                         />
                         <span className="text-sm">{goal}</span>
                       </div>
@@ -437,7 +437,7 @@ export default function BetaOnboarding({ onComplete, onSkip }: BetaOnboardingPro
                       >
                         <Checkbox
                           checked={formData.documentationNeeds?.includes(need) || false}
-                          readOnly
+                          disabled
                         />
                         <span className="text-sm">{need}</span>
                       </div>
