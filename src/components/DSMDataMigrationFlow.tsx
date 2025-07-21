@@ -247,7 +247,7 @@ export default function DSMDataMigrationFlow({
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   
   const { toast } = useToast();
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateMigrationStatus = useCallback((updates: Partial<MigrationStatus>) => {
     const newStatus = { ...migrationStatus, ...updates };
