@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarInitials } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Users, 
   Mail, 
@@ -456,7 +456,7 @@ export default function BetaTesterManager({
                     <div className="flex items-center gap-4">
                       <Avatar>
                         <AvatarFallback>
-                          <AvatarInitials name={tester.contactName} />
+                          {tester.contactName.split(' ').map(n => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       
