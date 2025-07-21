@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -412,71 +412,72 @@ export default function BetaPerformanceMonitoring({
             <CardContent>
               <div className="space-y-4">
                 {filteredTesters.map((tester) => (
-                  <div 
-                    key={tester.testerId} 
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setSelectedTester(selectedTester === tester.testerId ? null : tester.testerId)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <div className="font-medium">{tester.companyName}</div>
-                        <div className="text-sm text-gray-600">
-                          {tester.sessionsCount} sessions • {tester.totalTimeSpent} min total
+                  <React.Fragment key={tester.testerId}>
+                    <div 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setSelectedTester(selectedTester === tester.testerId ? null : tester.testerId)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <div className="font-medium">{tester.companyName}</div>
+                          <div className="text-sm text-gray-600">
+                            {tester.sessionsCount} sessions • {tester.totalTimeSpent} min total
+                          </div>
+                        </div>
+                        <Badge variant="outline">{tester.betaGroup.toUpperCase()}</Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className={`font-bold ${getStatusColor(tester.averageRating, 'rating')}`}>
+                            {tester.averageRating}/10
+                          </div>
+                          <div className="text-sm text-gray-600">satisfaction</div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className={`font-bold ${getStatusColor(tester.taskCompletionRate, 'percentage')}`}>
+                            {tester.taskCompletionRate}%
+                          </div>
+                          <div className="text-sm text-gray-600">completion</div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className={`font-bold ${getStatusColor(tester.averageLoadTime, 'time')}`}>
+                            {tester.averageLoadTime.toFixed(1)}s
+                          </div>
+                          <div className="text-sm text-gray-600">load time</div>
                         </div>
                       </div>
-                      <Badge variant="outline">{tester.betaGroup.toUpperCase()}</Badge>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className={`font-bold ${getStatusColor(tester.averageRating, 'rating')}`}>
-                          {tester.averageRating}/10
-                        </div>
-                        <div className="text-sm text-gray-600">satisfaction</div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`font-bold ${getStatusColor(tester.taskCompletionRate, 'percentage')}`}>
-                          {tester.taskCompletionRate}%
-                        </div>
-                        <div className="text-sm text-gray-600">completion</div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`font-bold ${getStatusColor(tester.averageLoadTime, 'time')}`}>
-                          {tester.averageLoadTime.toFixed(1)}s
-                        </div>
-                        <div className="text-sm text-gray-600">load time</div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {selectedTester === tester.testerId && (
-                    <div className="ml-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <div className="font-medium">Feedback</div>
-                          <div>{tester.feedbackSubmissions} submissions</div>
-                          <div>{tester.bugReports} bug reports</div>
-                          <div>{tester.featureRequests} feature requests</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Performance</div>
-                          <div>{tester.averageTaskTime} min avg task</div>
-                          <div>{tester.errorEncounters} errors</div>
-                          <div>{tester.crashCount} crashes</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Bluetooth</div>
-                          <div>{tester.bluetoothSuccessRate}% success rate</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Last Active</div>
-                          <div>{tester.lastActiveDate.toLocaleDateString()}</div>
+                    {selectedTester === tester.testerId && (
+                      <div className="ml-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <div className="font-medium">Feedback</div>
+                            <div>{tester.feedbackSubmissions} submissions</div>
+                            <div>{tester.bugReports} bug reports</div>
+                            <div>{tester.featureRequests} feature requests</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Performance</div>
+                            <div>{tester.averageTaskTime} min avg task</div>
+                            <div>{tester.errorEncounters} errors</div>
+                            <div>{tester.crashCount} crashes</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Bluetooth</div>
+                            <div>{tester.bluetoothSuccessRate}% success rate</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Last Active</div>
+                            <div>{tester.lastActiveDate.toLocaleDateString()}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             </CardContent>

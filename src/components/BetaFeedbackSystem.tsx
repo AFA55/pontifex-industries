@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StarIcon, BugIcon, LightbulbIcon, AlertTriangleIcon } from 'lucide-react';
+import { Star as StarIcon, Bug as BugIcon, Lightbulb as LightbulbIcon, AlertTriangle as AlertTriangleIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface FeedbackData {

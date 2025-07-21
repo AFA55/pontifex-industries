@@ -1130,10 +1130,10 @@ export default function DSMOnboardingWizard({
                 <SelectValue placeholder="Select approximate size" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="small">Small (< 100 MB)</SelectItem>
+                <SelectItem value="small">Small (&lt; 100 MB)</SelectItem>
                 <SelectItem value="medium">Medium (100 MB - 1 GB)</SelectItem>
                 <SelectItem value="large">Large (1 GB - 10 GB)</SelectItem>
-                <SelectItem value="very_large">Very Large (> 10 GB)</SelectItem>
+                <SelectItem value="very_large">Very Large (&gt; 10 GB)</SelectItem>
               </SelectContent>
             </Select>
           </div>

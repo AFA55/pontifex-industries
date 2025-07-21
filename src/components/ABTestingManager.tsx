@@ -13,17 +13,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { 
-  PlayIcon, 
-  PauseIcon, 
-  StopIcon, 
-  BarChart3Icon, 
-  TrendingUpIcon, 
-  TrendingDownIcon,
-  PlusIcon,
-  EditIcon,
-  TrashIcon,
-  UsersIcon,
-  TargetIcon
+  Play as PlayIcon, 
+  Pause as PauseIcon, 
+  Square as StopIcon, 
+  BarChart3 as BarChart3Icon, 
+  TrendingUp as TrendingUpIcon, 
+  TrendingDown as TrendingDownIcon,
+  Plus as PlusIcon,
+  Edit as EditIcon,
+  Trash as TrashIcon,
+  Users as UsersIcon,
+  Target as TargetIcon
 } from 'lucide-react';
 import { 
   ABTest, 

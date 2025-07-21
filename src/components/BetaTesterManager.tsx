@@ -628,7 +628,7 @@ export default function BetaTesterManager({
             </div>
             
             <div>
-              <h4 className="font-medium mb-3">Low Engagement (<40%)</h4>
+              <h4 className="font-medium mb-3">Low Engagement (&lt;40%)</h4>
               <div className="space-y-2">
                 {testers
                   .filter(t => getEngagementScore(t) < 40)
