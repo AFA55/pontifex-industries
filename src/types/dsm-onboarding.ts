@@ -749,6 +749,7 @@ export interface SupportTicket {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'waiting_customer' | 'resolved' | 'closed';
   submittedBy: string;
+  submittedAt: Date; // Add for compatibility
   assignedTo?: string;
   createdAt: Date;
   lastUpdated: Date;

@@ -49,15 +49,23 @@ export class DSMMigrationService {
     this.onProgressUpdate = onProgress;
     
     // Initialize migration status
+    const startTime = new Date();
     this.migrationStatus = {
       migrationId: this.generateMigrationId(),
-      startDate: new Date(),
+      startDate: startTime,
       status: 'in_progress',
       totalRecords: 0,
       processedRecords: 0,
       successfulRecords: 0,
       failedRecords: 0,
       skippedRecords: 0,
+      progress: 0,
+      currentStep: 'Initializing migration',
+      recordsProcessed: 0,
+      successCount: 0,
+      errorCount: 0,
+      warningCount: 0,
+      startTime: startTime,
       tables: {
         jobs: { total: 0, processed: 0, successful: 0, failed: 0 },
         employees: { total: 0, processed: 0, successful: 0, failed: 0 },
@@ -736,7 +744,10 @@ export class DSMMigrationService {
   /**
    * Get migration status
    */
-  getMigrationStatus(): DSMMigrationStatus | null {
+  getMigrationStatus(): DSMMigrationStatus {
+    if (!this.migrationStatus) {
+      throw new Error('No migration in progress');
+    }
     return this.migrationStatus;
   }
 

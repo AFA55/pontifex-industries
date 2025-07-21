@@ -366,6 +366,18 @@ export interface DSMMigrationStatus {
   successfulRecords: number;
   failedRecords: number;
   skippedRecords: number;
+  progress: number; // Percentage progress
+  currentStep: string; // Current step description
+  recordsProcessed: number; // Alias for processedRecords
+  
+  // Count properties for UI display
+  successCount: number; // Alias for successfulRecords
+  errorCount: number; // Alias for failedRecords
+  warningCount: number; // Count of warnings
+  
+  // Time tracking
+  startTime: Date; // Alias for startDate
+  endTime?: Date; // Alias for endDate
   
   // Table-specific Progress
   tables: {
@@ -454,4 +466,10 @@ export interface DSMValidationResult {
     error?: string;
     warning?: string;
   }>;
+  recordCounts: {
+    total: number;
+    jobs: number;
+    employees: number;
+    customers: number;
+  };
 }

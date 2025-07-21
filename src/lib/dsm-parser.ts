@@ -766,8 +766,17 @@ export class DSMDataParser {
       isValid: true,
       errors: [],
       warnings: [],
-      fieldResults: {}
+      fieldResults: {},
+      recordCounts: {
+        total: 0,
+        jobs: exportData.jobs?.length || 0,
+        employees: exportData.employees?.length || 0,
+        customers: exportData.customers?.length || 0
+      }
     };
+
+    // Calculate total records
+    results.recordCounts.total = results.recordCounts.jobs + results.recordCounts.employees + results.recordCounts.customers;
 
     // Validate each data type
     const dataTypes = ['jobs', 'employees', 'customers', 'timeEntries'] as const;

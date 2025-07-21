@@ -707,7 +707,7 @@ export default function DSMMigrationInterface({
                     )}
 
                     <div className="flex justify-center space-x-4">
-                      {migrationStatus.status !== 'running' && (
+                      {migrationStatus.status !== 'in_progress' && (
                         <Button
                           onClick={() => setActiveTab('report')}
                           className="bg-gradient-to-r from-pontifex-blue to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-blue-500/25 min-h-[44px]"
