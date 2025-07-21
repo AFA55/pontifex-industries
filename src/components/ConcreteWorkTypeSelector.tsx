@@ -41,7 +41,7 @@ export function ConcreteWorkTypeSelector({ onSelect, selectedType }: ConcreteWor
     width: 0
   });
   const [jobSize, setJobSize] = useState<'small' | 'medium' | 'large'>('medium');
-  const [calculation, setCalculation] = useState<CuttingCalculation | null>(null);
+  const [calculation, setCalculation] = useState<CuttingCalculation | undefined>(undefined);
 
   // Use optimized hook for work types
   const { workTypes: filteredWorkTypes, getWorkTypeById } = useConcreteWorkTypes(activeTab);
@@ -52,7 +52,7 @@ export function ConcreteWorkTypeSelector({ onSelect, selectedType }: ConcreteWor
     } else {
       onSelect(workType);
       setShowCalculator(true);
-      setCalculation(null);
+      setCalculation(undefined);
     }
   };
 
@@ -64,7 +64,7 @@ export function ConcreteWorkTypeSelector({ onSelect, selectedType }: ConcreteWor
     }
   };
 
-  const selectedWorkType = selectedType ? getWorkTypeById(selectedType) : null;
+  const selectedWorkType = selectedType ? getWorkTypeById(selectedType) : undefined;
   const equipment = selectedType ? suggestEquipment(selectedType, jobSize) : [];
   const dustRequirements = selectedType ? getDustSuppressionRequirements(selectedType) : [];
 

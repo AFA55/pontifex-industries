@@ -211,7 +211,7 @@ function EquipmentStatus({ equipment }: { equipment: {
 export function ConcreteJobsDashboard() {
   const { toast } = useToast();
   const [bluetoothService] = useState(() => new BluetoothService());
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | undefined>(undefined);
   const [isScanning, setIsScanning] = useState(false);
   const [beacons, setBeacons] = useState<BeaconData[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
@@ -279,17 +279,8 @@ export function ConcreteJobsDashboard() {
   const startBeaconScan = useCallback(async () => {
     setIsScanning(true);
     try {
-      await bluetoothService.startScanning((beacon: BeaconData) => {
-        setBeacons(prev => {
-          const updated = [...prev];
-          const index = updated.findIndex(b => b.id === beacon.id);
-          if (index >= 0) {
-            updated[index] = beacon;
-          } else {
-            updated.push(beacon);
-          }
-          return updated;
-        });
+      await bluetoothService.startScanning((beacons: BeaconData[]) => {
+        setBeacons(beacons);
       });
 
       toast({

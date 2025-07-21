@@ -107,9 +107,9 @@ export function ConcreteJobForm({ onSubmit, initialData }: ConcreteJobFormProps)
     containmentSetup: useRef<HTMLInputElement>(null)
   };
 
-  const [selectedWorkType, setSelectedWorkType] = useState<ConcreteWorkType | null>(null);
-  const [calculation, setCalculation] = useState<CuttingCalculation | null>(null);
-  const [exposureData, setExposureData] = useState<SilicaExposureData | null>(null);
+  const [selectedWorkType, setSelectedWorkType] = useState<ConcreteWorkType | undefined>(undefined);
+  const [calculation, setCalculation] = useState<CuttingCalculation | undefined>(undefined);
+  const [exposureData, setExposureData] = useState<SilicaExposureData | undefined>(undefined);
   const [controlPlan, setControlPlan] = useState<string>('');
   const [uploadingPhotos, setUploadingPhotos] = useState<Record<string, boolean>>({});
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -401,7 +401,7 @@ Reviewed by: ___________________ Date: ___________
             selectedType={selectedWorkType}
             onSelect={(workType, calc) => {
               setSelectedWorkType(workType);
-              setCalculation(calc || null);
+              setCalculation(calc || undefined);
               setValue('workType', workType);
             }}
           />

@@ -112,7 +112,7 @@ interface DashboardMetrics {
 export function ConcreteJobDashboard() {
   const { toast } = useToast();
   const supabase = createClient();
-  const [, setSelectedJob] = useState<ConcreteJob | null>(null);
+  const [, setSelectedJob] = useState<ConcreteJob | undefined>(undefined);
   const [jobs, setJobs] = useState<ConcreteJob[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<ConcreteJob[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

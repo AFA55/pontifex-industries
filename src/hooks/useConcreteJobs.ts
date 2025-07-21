@@ -156,7 +156,7 @@ export function useConcreteJobs(options: UseConcreteJobsOptions = {}) {
   // Update job with beacon data
   const updateJobWithBeaconData = useCallback((beacons: BeaconData[]) => {
     setJobs(prev => prev.map(job => {
-      const updatedCrew = job.crew.map(member => {
+      const updatedCrew = job.crew.map((member: any) => {
         const beacon = beacons.find(b => b.id === member.beaconId);
         if (beacon) {
           return {
@@ -169,12 +169,12 @@ export function useConcreteJobs(options: UseConcreteJobsOptions = {}) {
         return member;
       });
 
-      const updatedEquipment = job.equipment.map(item => {
+      const updatedEquipment = job.equipment.map((item: any) => {
         const beacon = beacons.find(b => b.id === item.beaconId);
         if (beacon) {
           return {
             ...item,
-            batteryLevel: beacon.batteryLevel
+            batteryLevel: (beacon as any).batteryLevel
           };
         }
         return item;

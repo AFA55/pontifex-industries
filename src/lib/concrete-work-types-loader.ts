@@ -1,6 +1,6 @@
 import { ConcreteWorkType, WorkTypeDetails } from '@/types/concrete-work-types';
 
-let workTypesCache: Record<ConcreteWorkType, WorkTypeDetails> | null = null;
+let workTypesCache: Record<ConcreteWorkType, WorkTypeDetails> | undefined = undefined;
 
 export async function loadConcreteWorkTypes(): Promise<Record<ConcreteWorkType, WorkTypeDetails>> {
   if (workTypesCache) {
