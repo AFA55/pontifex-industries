@@ -185,8 +185,8 @@ export default function ABTestingManager({
           }
         ],
         targetAudience: {
-          betaGroups: ['beta'],
-          companyTypes: ['small', 'medium']
+          betaGroups: ['beta'] as ('alpha' | 'beta' | 'gamma')[],
+          companyTypes: ['small', 'medium'] as ('micro' | 'small' | 'medium' | 'large')[]
         },
         primaryMetric: 'task_completion' as const,
         secondaryMetrics: ['satisfaction'],
@@ -639,7 +639,7 @@ export default function ABTestingManager({
                       <span>{variant.name}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{variant.trafficSplit}%</span>
-                        {variant.isControl && <Badge variant="outline" size="sm">Control</Badge>}
+                        {variant.isControl && <Badge variant="outline">Control</Badge>}
                       </div>
                     </div>
                   ))}
