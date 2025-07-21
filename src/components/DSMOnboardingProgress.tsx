@@ -28,6 +28,7 @@ import {
   RefreshCw,
   ArrowRight,
   Star,
+  GraduationCap,
   MessageSquare,
   HelpCircle,
   Zap,
@@ -868,7 +869,7 @@ export default function DSMOnboardingProgress({
                               {req.name}
                             </span>
                             {req.required && (
-                              <Badge variant="outline" size="sm">Required</Badge>
+                              <Badge variant="outline">Required</Badge>
                             )}
                           </div>
                           <div className="text-xs text-gray-500">
@@ -943,7 +944,7 @@ export default function DSMOnboardingProgress({
                           {event.timestamp.toLocaleString()}
                         </div>
                       </div>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="outline">
                         {event.eventType.replace('_', ' ')}
                       </Badge>
                     </div>
