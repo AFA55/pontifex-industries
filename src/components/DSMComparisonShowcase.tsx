@@ -71,6 +71,38 @@ export default function DSMComparisonShowcase({
   const [activeTab, setActiveTab] = useState('capabilities');
   const [demoStep, setDemoStep] = useState(0);
 
+  // Mock capability comparison data since it's not in the DSMComparison interface
+  const capabilityComparison = {
+    dsm: {
+      jobManagement: { score: 6, description: 'Basic job tracking', features: ['Job creation', 'Status updates'] },
+      customerManagement: { score: 5, description: 'Contact management', features: ['Customer database', 'Basic CRM'] },
+      equipmentTracking: { score: 3, description: 'Manual tracking', features: ['Equipment lists', 'Manual check-in'] },
+      safetyCompliance: { score: 4, description: 'Basic compliance', features: ['Safety forms', 'Manual reporting'] },
+      reporting: { score: 5, description: 'Standard reports', features: ['Basic reports', 'Export functions'] },
+      mobileAccess: { score: 6, description: 'Mobile app available', features: ['iOS/Android app', 'Basic functions'] },
+      realTimeUpdates: { score: 2, description: 'Limited real-time', features: ['Manual refresh', 'Delayed updates'] },
+      automation: { score: 3, description: 'Minimal automation', features: ['Basic workflows', 'Limited triggers'] },
+      bluetoothTracking: { score: 1, description: 'Not available', features: ['No indoor tracking'] },
+      oshaCompliance: { score: 2, description: 'Manual only', features: ['Paper forms', 'Manual tracking'] },
+      advancedAnalytics: { score: 3, description: 'Basic reports', features: ['Standard reports', 'Limited insights'] },
+      predictiveMaintenance: { score: 1, description: 'Not available', features: ['Manual scheduling'] }
+    },
+    pontifex: {
+      jobManagement: { score: 9, description: 'Advanced job management', features: ['Smart scheduling', 'Real-time tracking', 'Automated workflows'] },
+      customerManagement: { score: 9, description: 'Complete CRM integration', features: ['Full CRM', 'Communication tracking', 'Customer portal'] },
+      equipmentTracking: { score: 10, description: 'Real-time GPS + Bluetooth', features: ['Live location', 'Geofencing', 'Usage analytics'] },
+      safetyCompliance: { score: 10, description: 'Automated OSHA compliance', features: ['Real-time monitoring', 'Automated reporting', 'Compliance alerts'] },
+      reporting: { score: 9, description: 'Advanced analytics', features: ['Real-time dashboards', 'Custom reports', 'Predictive insights'] },
+      mobileAccess: { score: 9, description: 'Full mobile experience', features: ['Native apps', 'Offline mode', 'All features available'] },
+      realTimeUpdates: { score: 10, description: 'Instant real-time updates', features: ['Live data sync', 'Push notifications', 'Real-time collaboration'] },
+      automation: { score: 9, description: 'Intelligent automation', features: ['Smart workflows', 'AI-powered triggers', 'Process optimization'] },
+      bluetoothTracking: { score: 10, description: 'Advanced Bluetooth tracking', features: ['Indoor positioning', 'Beacon integration', 'Asset monitoring'] },
+      oshaCompliance: { score: 10, description: 'Automated compliance', features: ['Real-time monitoring', 'Automated documentation', 'Compliance reporting'] },
+      advancedAnalytics: { score: 9, description: 'AI-powered analytics', features: ['Predictive analytics', 'Business intelligence', 'Custom dashboards'] },
+      predictiveMaintenance: { score: 8, description: 'Predictive maintenance', features: ['AI predictions', 'Automated scheduling', 'Performance monitoring'] }
+    }
+  };
+
   useEffect(() => {
     if (interactiveMode) {
       setAnimateScores(true);
@@ -180,57 +212,57 @@ export default function DSMComparisonShowcase({
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {renderCapabilityScoreCard(
           'Job Management',
-          comparisonData.dsmComparison.dsm.jobManagement,
-          comparisonData.dsmComparison.pontifex.jobManagement,
+          capabilityComparison.dsm.jobManagement,
+          capabilityComparison.pontifex.jobManagement,
           FileText
         )}
         
         {renderCapabilityScoreCard(
           'Customer Management',
-          comparisonData.dsmComparison.dsm.customerManagement,
-          comparisonData.dsmComparison.pontifex.customerManagement,
+          capabilityComparison.dsm.customerManagement,
+          capabilityComparison.pontifex.customerManagement,
           Users
         )}
         
         {renderCapabilityScoreCard(
           'Equipment Tracking',
-          comparisonData.dsmComparison.dsm.equipmentTracking,
-          comparisonData.dsmComparison.pontifex.equipmentTracking,
+          capabilityComparison.dsm.equipmentTracking,
+          capabilityComparison.pontifex.equipmentTracking,
           MapPin
         )}
         
         {renderCapabilityScoreCard(
           'Safety Compliance',
-          comparisonData.dsmComparison.dsm.safetyCompliance,
-          comparisonData.dsmComparison.pontifex.safetyCompliance,
+          capabilityComparison.dsm.safetyCompliance,
+          capabilityComparison.pontifex.safetyCompliance,
           Shield
         )}
         
         {renderCapabilityScoreCard(
           'Reporting & Analytics',
-          comparisonData.dsmComparison.dsm.reporting,
-          comparisonData.dsmComparison.pontifex.reporting,
+          capabilityComparison.dsm.reporting,
+          capabilityComparison.pontifex.reporting,
           BarChart3
         )}
         
         {renderCapabilityScoreCard(
           'Mobile Access',
-          comparisonData.dsmComparison.dsm.mobileAccess,
-          comparisonData.dsmComparison.pontifex.mobileAccess,
+          capabilityComparison.dsm.mobileAccess,
+          capabilityComparison.pontifex.mobileAccess,
           Smartphone
         )}
         
         {renderCapabilityScoreCard(
           'Real-time Updates',
-          comparisonData.dsmComparison.dsm.realTimeUpdates,
-          comparisonData.dsmComparison.pontifex.realTimeUpdates,
+          capabilityComparison.dsm.realTimeUpdates,
+          capabilityComparison.pontifex.realTimeUpdates,
           Activity
         )}
         
         {renderCapabilityScoreCard(
           'Automation',
-          comparisonData.dsmComparison.dsm.automation,
-          comparisonData.dsmComparison.pontifex.automation,
+          capabilityComparison.dsm.automation,
+          capabilityComparison.pontifex.automation,
           Zap
         )}
       </div>
@@ -249,14 +281,14 @@ export default function DSMComparisonShowcase({
               {renderCapabilityScoreCard(
                 'Bluetooth Tracking',
                 { score: 0, description: 'Not available', features: ['No indoor tracking'] },
-                comparisonData.dsmComparison.pontifex.bluetoothTracking,
+                capabilityComparison.pontifex.bluetoothTracking,
                 Signal
               )}
               
               {renderCapabilityScoreCard(
                 'OSHA Compliance',
                 { score: 1, description: 'Manual only', features: ['Paper forms', 'Manual tracking'] },
-                comparisonData.dsmComparison.pontifex.oshaCompliance,
+                capabilityComparison.pontifex.oshaCompliance,
                 Shield
               )}
             </div>
@@ -265,14 +297,14 @@ export default function DSMComparisonShowcase({
               {renderCapabilityScoreCard(
                 'Advanced Analytics',
                 { score: 2, description: 'Basic reports', features: ['Standard reports', 'Limited insights'] },
-                comparisonData.dsmComparison.pontifex.advancedAnalytics,
+                capabilityComparison.pontifex.advancedAnalytics,
                 TrendingUp
               )}
               
               {renderCapabilityScoreCard(
                 'Predictive Maintenance',
                 { score: 0, description: 'Not available', features: ['Manual scheduling'] },
-                comparisonData.dsmComparison.pontifex.predictiveMaintenance,
+                capabilityComparison.pontifex.predictiveMaintenance,
                 Wrench
               )}
             </div>
@@ -496,19 +528,19 @@ export default function DSMComparisonShowcase({
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center p-4 bg-white border border-green-200 rounded-lg">
               <div className="text-3xl font-bold text-green-600">
-                ${comparisonData.costComparison.savings.yearly.toLocaleString()}
+                ${Math.round(comparisonData.roiCalculation.totalSavings / 3).toLocaleString()}
               </div>
               <div className="text-sm text-gray-600">Annual Savings</div>
             </div>
             <div className="text-center p-4 bg-white border border-green-200 rounded-lg">
               <div className="text-3xl font-bold text-green-600">
-                {comparisonData.costComparison.savings.percentage}%
+                {comparisonData.roiCalculation.yearOneROI}%
               </div>
               <div className="text-sm text-gray-600">Cost Reduction</div>
             </div>
             <div className="text-center p-4 bg-white border border-green-200 rounded-lg">
               <div className="text-3xl font-bold text-green-600">
-                {comparisonData.costComparison.savings.breakEvenMonths}
+                {comparisonData.roiCalculation.timeToROI}
               </div>
               <div className="text-sm text-gray-600">Months to Break Even</div>
             </div>
@@ -538,7 +570,7 @@ export default function DSMComparisonShowcase({
             </div>
             <div className="mt-3 pt-3 border-t">
               <div className="font-bold text-green-700">
-                Total 3-Year Savings: ${(comparisonData.costComparison.savings.yearly * 3).toLocaleString()}
+                Total 3-Year Savings: ${comparisonData.roiCalculation.totalSavings.toLocaleString()}
               </div>
             </div>
           </div>
