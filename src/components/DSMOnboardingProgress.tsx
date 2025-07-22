@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -890,7 +891,7 @@ export default function DSMOnboardingProgress({
                       {adminView && status === 'available' && (
                         <div className="pt-2">
                           <Button 
-                            size="sm" 
+                             
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1055,7 +1056,7 @@ export default function DSMOnboardingProgress({
   );
 
   function getEventIcon(eventType: OnboardingEventType) {
-    const iconMap: { [key in OnboardingEventType]: JSX.Element } = {
+    const iconMap: { [key in OnboardingEventType]: React.ReactElement } = {
       session_started: <Play className="h-3 w-3 text-blue-600" />,
       step_started: <ArrowRight className="h-3 w-3 text-blue-600" />,
       step_completed: <CheckCircle className="h-3 w-3 text-green-600" />,

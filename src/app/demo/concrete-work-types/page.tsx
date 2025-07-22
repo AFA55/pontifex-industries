@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState } from 'react';
@@ -132,7 +133,7 @@ export default function ConcreteWorkTypesDemo() {
                     </p>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={handleClearSelection}>
+                <Button variant="outline"  onClick={handleClearSelection}>
                   Clear Selection
                 </Button>
               </div>

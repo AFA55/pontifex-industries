@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -255,7 +256,7 @@ export function SchedulingCalendar() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  
                   onClick={() => navigateWeek('prev')}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -265,7 +266,7 @@ export function SchedulingCalendar() {
                 </h2>
                 <Button
                   variant="outline"
-                  size="sm"
+                  
                   onClick={() => navigateWeek('next')}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -282,11 +283,11 @@ export function SchedulingCalendar() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" >
                 <Filter className="h-4 w-4 mr-1" />
                 Filter
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" >
                 <Search className="h-4 w-4 mr-1" />
                 Search
               </Button>

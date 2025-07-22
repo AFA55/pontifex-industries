@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
@@ -191,7 +192,7 @@ export default function DSMMigrationInterface({
                 <Button
                   onClick={resetMigration}
                   variant="outline"
-                  size="sm"
+                  
                   className="hidden sm:flex"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
@@ -201,7 +202,7 @@ export default function DSMMigrationInterface({
               
               <Button 
                 variant="outline"
-                size="sm"
+                
                 className="hidden sm:flex"
               >
                 <Eye className="h-4 w-4 mr-2" />

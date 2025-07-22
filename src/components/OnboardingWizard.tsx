@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -831,11 +832,11 @@ export default function OnboardingWizard({
       </Button>
       
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" >
           <HelpCircle className="h-4 w-4 mr-2" />
           Get Help
         </Button>
-        <Button variant="ghost" size="sm" disabled={!saving}>
+        <Button variant="ghost"  disabled={!saving}>
           {saving ? 'Saving...' : 'Save Progress'}
         </Button>
       </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -354,7 +355,7 @@ export function ConcreteJobsDashboard() {
             <LiveIndicator isLive={true} />
             <Button
               variant="outline"
-              size="sm"
+              
               onClick={refetch}
               className="gap-2"
             >
@@ -363,7 +364,7 @@ export function ConcreteJobsDashboard() {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              
               onClick={startBeaconScan}
               disabled={isScanning}
               className="gap-2"
@@ -371,7 +372,7 @@ export function ConcreteJobsDashboard() {
               <Bluetooth className="h-4 w-4" />
               {isScanning ? 'Scanning...' : 'Scan Beacons'}
             </Button>
-            <Button variant="default" size="sm" className="gap-2">
+            <Button variant="default"  className="gap-2">
               <Bell className="h-4 w-4" />
               Alerts ({metrics.safetyAlerts})
             </Button>
@@ -817,11 +818,11 @@ export function ConcreteJobsDashboard() {
                     )}
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1">
+                      <Button  className="flex-1">
                         <Camera className="h-4 w-4 mr-2" />
                         Upload Safety Photos
                       </Button>
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button  variant="outline" className="flex-1">
                         <FileText className="h-4 w-4 mr-2" />
                         View Control Plan
                       </Button>
@@ -879,7 +880,7 @@ export function ConcreteJobsDashboard() {
                         ))}
                       </div>
 
-                      <Button className="w-full" size="sm">
+                      <Button className="w-full" >
                         <Camera className="h-4 w-4 mr-2" />
                         Upload Progress Photo
                       </Button>

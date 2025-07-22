@@ -800,18 +800,18 @@ export type OnboardingEventType =
   | 'help_requested'
   | 'error_encountered'
   | 'feedback_submitted'
+  | 'session_paused'
+  | 'session_resumed'
+  | 'session_completed'
   | 'support_ticket_created'
   | 'training_module_started'
   | 'training_module_completed'
-  | 'assessment_completed'
+  | 'assessment_taken'
   | 'certification_earned'
-  | 'migration_phase_started'
-  | 'migration_phase_completed'
-  | 'validation_completed'
+  | 'migration_started'
+  | 'migration_completed'
   | 'system_configured'
-  | 'testing_completed'
-  | 'go_live_approved'
-  | 'onboarding_completed';
+  | 'go_live_approved';
 
 // Analytics and metrics
 export interface OnboardingMetrics {

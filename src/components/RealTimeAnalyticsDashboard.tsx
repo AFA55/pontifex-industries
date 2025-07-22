@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -246,7 +247,7 @@ export default function RealTimeAnalyticsDashboard({
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           {error}
-          <Button variant="outline" size="sm" onClick={refreshData} className="ml-2">
+          <Button variant="outline"  onClick={refreshData} className="ml-2">
             Retry
           </Button>
         </AlertDescription>
@@ -689,14 +690,14 @@ export default function RealTimeAnalyticsDashboard({
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="outline" >
                       {alert.category}
                     </Badge>
                     <Badge variant={
                       alert.severity === 'critical' ? 'destructive' :
                       alert.severity === 'error' ? 'destructive' :
                       alert.severity === 'warning' ? 'secondary' : 'default'
-                    } size="sm">
+                    } >
                       {alert.severity}
                     </Badge>
                   </div>
@@ -708,7 +709,7 @@ export default function RealTimeAnalyticsDashboard({
                 </div>
                 <div className="flex gap-2 ml-4">
                   {alert.actions?.map((action, actionIndex) => (
-                    <Button key={actionIndex} variant="outline" size="sm">
+                    <Button key={actionIndex} variant="outline" >
                       {action.label}
                     </Button>
                   ))}

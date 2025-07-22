@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -1163,10 +1164,10 @@ export default function InteractiveTrainingModules({
                       <div className="font-medium">{module.title}</div>
                       <div className="text-sm text-gray-600">{module.description}</div>
                       <div className="flex items-center gap-4 mt-1">
-                        <Badge variant="outline" size="sm">
+                        <Badge variant="outline" >
                           {module.difficulty}
                         </Badge>
-                        <Badge variant="outline" size="sm">
+                        <Badge variant="outline" >
                           {module.category}
                         </Badge>
                         <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -1179,7 +1180,7 @@ export default function InteractiveTrainingModules({
                   
                   <div className="flex items-center gap-2">
                     {hasPrerequisites && !isAvailable && (
-                      <Badge variant="secondary" size="sm">
+                      <Badge variant="secondary" >
                         Prerequisites Required
                       </Badge>
                     )}
@@ -1297,7 +1298,7 @@ export default function InteractiveTrainingModules({
                     
                     <div className="flex items-center gap-2">
                       {section.required && (
-                        <Badge variant="outline" size="sm">Required</Badge>
+                        <Badge variant="outline" >Required</Badge>
                       )}
                       <ArrowRight className="h-4 w-4 text-gray-400" />
                     </div>

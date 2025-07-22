@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -739,7 +740,7 @@ Reviewed by: ___________________ Date: ___________
                         <div className="flex gap-2 justify-center">
                           <Button
                             type="button"
-                            size="sm"
+                            
                             variant="outline"
                             onClick={() => window.open(photoUrls[key], '_blank')}
                           >
@@ -748,7 +749,7 @@ Reviewed by: ___________________ Date: ___________
                           </Button>
                           <Button
                             type="button"
-                            size="sm"
+                            
                             variant="outline"
                             onClick={() => {
                               setPhotoUrls(prev => ({ ...prev, [key]: '' }));

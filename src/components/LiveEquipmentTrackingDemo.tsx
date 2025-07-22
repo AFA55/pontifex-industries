@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -561,7 +562,7 @@ export default function LiveEquipmentTrackingDemo({
                 <Eye className="h-5 w-5" />
                 Equipment Detail: {selectedEquipment.name}
               </div>
-              <Button variant="outline" size="sm" onClick={() => setSelectedEquipment(null)}>
+              <Button variant="outline"  onClick={() => setSelectedEquipment(null)}>
                 Close
               </Button>
             </CardTitle>

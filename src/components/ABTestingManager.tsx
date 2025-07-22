@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -349,7 +350,7 @@ export default function ABTestingManager({
             <CardTitle>All A/B Tests</CardTitle>
             <div className="flex gap-2">
               <Button
-                size="sm"
+                
                 variant="outline"
                 onClick={() => handleCreateTest('onboarding')}
               >
@@ -357,7 +358,7 @@ export default function ABTestingManager({
                 Onboarding Test
               </Button>
               <Button
-                size="sm"
+                
                 variant="outline"
                 onClick={() => handleCreateTest('safety')}
               >
@@ -365,7 +366,7 @@ export default function ABTestingManager({
                 Safety Test
               </Button>
               <Button
-                size="sm"
+                
                 onClick={() => handleCreateTest()}
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -410,7 +411,7 @@ export default function ABTestingManager({
                 <div className="flex items-center gap-2">
                   {test.status === 'draft' && (
                     <Button
-                      size="sm"
+                      
                       onClick={(e) => {
                         e.stopPropagation();
                         handleStartTest(test.id);
@@ -422,7 +423,7 @@ export default function ABTestingManager({
                   
                   {test.status === 'active' && (
                     <Button
-                      size="sm"
+                      
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -434,7 +435,7 @@ export default function ABTestingManager({
                   )}
 
                   <Button
-                    size="sm"
+                    
                     variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -446,7 +447,7 @@ export default function ABTestingManager({
                   </Button>
 
                   <Button
-                    size="sm"
+                    
                     variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();

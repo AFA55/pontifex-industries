@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -379,11 +380,11 @@ export default function BetaTesterManager({
             <div className="flex justify-between items-center">
               <CardTitle>Beta Testers</CardTitle>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={handleExportData}>
+                <Button  variant="outline" onClick={handleExportData}>
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
-                <Button size="sm" onClick={handleInviteTester}>
+                <Button  onClick={handleInviteTester}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Invite Tester
                 </Button>
@@ -491,7 +492,7 @@ export default function BetaTesterManager({
 
                       <div className="flex gap-1">
                         <Button
-                          size="sm"
+                          
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -501,7 +502,7 @@ export default function BetaTesterManager({
                           <MessageSquare className="h-4 w-4" />
                         </Button>
                         <Button
-                          size="sm"
+                          
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -770,10 +771,10 @@ export default function OnboardingProgressTracker({
                               {req.description}
                             </span>
                             {req.required && (
-                              <Badge variant="outline" size="sm">Required</Badge>
+                              <Badge variant="outline" >Required</Badge>
                             )}
                           </div>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline" >
                             {req.status.replace('_', ' ')}
                           </Badge>
                         </div>
@@ -796,7 +797,7 @@ export default function OnboardingProgressTracker({
                     {adminView && !verification?.verified && (
                       <div className="mt-3 pt-3 border-t">
                         <Button
-                          size="sm"
+                          
                           variant="outline"
                           onClick={() => manuallyVerifyStep(criteria.step)}
                         >
@@ -815,7 +816,7 @@ export default function OnboardingProgressTracker({
                             <AlertDescription>
                               <div className="flex justify-between">
                                 <span>{issue.description}</span>
-                                <Badge variant="outline" size="sm">
+                                <Badge variant="outline" >
                                   {issue.severity}
                                 </Badge>
                               </div>
@@ -866,7 +867,7 @@ export default function OnboardingProgressTracker({
                           {event.timestamp.toLocaleString()}
                         </div>
                       </div>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="outline" >
                         {event.eventType.replace('_', ' ')}
                       </Badge>
                     </div>
@@ -907,7 +908,7 @@ export default function OnboardingProgressTracker({
   );
 
   function getEventIcon(eventType: OnboardingEventType) {
-    const iconMap: { [key in OnboardingEventType]: JSX.Element } = {
+    const iconMap: { [key in OnboardingEventType]: React.ReactElement } = {
       session_started: <Play className="h-3 w-3 text-blue-600" />,
       step_started: <ArrowRight className="h-3 w-3 text-blue-600" />,
       step_completed: <CheckCircle className="h-3 w-3 text-green-600" />,

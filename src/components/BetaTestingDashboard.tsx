@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -476,7 +477,7 @@ export default function BetaTestingDashboard({
             </SelectContent>
           </Select>
           
-          <Button variant="outline" size="sm" onClick={loadDashboardData} disabled={isLoading}>
+          <Button variant="outline"  onClick={loadDashboardData} disabled={isLoading}>
             {isLoading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
@@ -565,7 +566,7 @@ export default function BetaTestingDashboard({
                     <p className="text-sm text-gray-600 mb-3">
                       Complete walkthrough of all platform features and testing procedures
                     </p>
-                    <Button size="sm" variant="outline">View Guide</Button>
+                    <Button  variant="outline">View Guide</Button>
                   </div>
                   
                   <div className="border rounded-lg p-4">
@@ -573,7 +574,7 @@ export default function BetaTestingDashboard({
                     <p className="text-sm text-gray-600 mb-3">
                       Detailed documentation for each concrete cutting feature
                     </p>
-                    <Button size="sm" variant="outline">Browse Docs</Button>
+                    <Button  variant="outline">Browse Docs</Button>
                   </div>
                   
                   <div className="border rounded-lg p-4">
@@ -581,7 +582,7 @@ export default function BetaTestingDashboard({
                     <p className="text-sm text-gray-600 mb-3">
                       Common questions and troubleshooting information
                     </p>
-                    <Button size="sm" variant="outline">Get Help</Button>
+                    <Button  variant="outline">Get Help</Button>
                   </div>
                 </div>
               </CardContent>

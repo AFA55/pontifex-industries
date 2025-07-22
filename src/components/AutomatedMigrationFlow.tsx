@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -565,18 +566,18 @@ export default function AutomatedMigrationFlow({
             </span>
             <div className="flex gap-2">
               {isRunning && (
-                <Button variant="outline" size="sm" onClick={pauseMigration}>
+                <Button variant="outline"  onClick={pauseMigration}>
                   <Pause className="h-4 w-4 mr-2" />
                   Pause
                 </Button>
               )}
               {isPaused && (
-                <Button variant="outline" size="sm" onClick={resumeMigration}>
+                <Button variant="outline"  onClick={resumeMigration}>
                   <Play className="h-4 w-4 mr-2" />
                   Resume
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={resetMigration}>
+              <Button variant="outline"  onClick={resetMigration}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset
               </Button>

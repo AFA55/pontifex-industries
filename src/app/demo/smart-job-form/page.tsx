@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { SmartJobForm } from '@/components/SmartJobForm';

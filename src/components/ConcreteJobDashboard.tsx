@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -420,7 +421,7 @@ export function ConcreteJobDashboard() {
               <Button
                 onClick={() => setAutoRefresh(!autoRefresh)}
                 variant="outline"
-                size="sm"
+                
                 className="hidden sm:flex"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -430,7 +431,7 @@ export function ConcreteJobDashboard() {
               <Button
                 onClick={startBeaconScan}
                 variant="outline"
-                size="sm"
+                
                 disabled={scanning}
                 className="hidden sm:flex"
               >
@@ -663,7 +664,7 @@ export function ConcreteJobDashboard() {
                         </Badge>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          
                           className="h-8 w-8 p-0"
                         >
                           <MoreVertical className="h-4 w-4" />
@@ -751,7 +752,7 @@ export function ConcreteJobDashboard() {
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
-                          size="sm"
+                          
                           className="h-8 px-3 text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -763,7 +764,7 @@ export function ConcreteJobDashboard() {
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
+                          
                           className="h-8 px-3 text-xs"
                           onClick={(e) => {
                             e.stopPropagation();

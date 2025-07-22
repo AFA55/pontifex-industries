@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState } from 'react';
@@ -197,7 +198,7 @@ export default function BetaFeedbackSystem({
           <div className="flex items-center gap-2">
             <Badge variant="outline">{betaGroup.toUpperCase()} Tester</Badge>
             {onClose && (
-              <Button variant="ghost" size="sm" onClick={onClose}>
+              <Button variant="ghost"  onClick={onClose}>
                 ✕
               </Button>
             )}

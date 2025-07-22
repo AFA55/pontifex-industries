@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, memo } from 'react';
@@ -168,7 +169,7 @@ export function ConcreteWorkTypeSelector({ onSelect, selectedType }: ConcreteWor
                   <Button
                     key={size}
                     variant={jobSize === size ? 'default' : 'outline'}
-                    size="sm"
+                    
                     onClick={() => setJobSize(size)}
                   >
                     {size.charAt(0).toUpperCase() + size.slice(1)}

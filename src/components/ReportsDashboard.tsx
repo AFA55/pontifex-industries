@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState } from 'react';
@@ -122,7 +123,7 @@ export function ReportsDashboard() {
                   <LineChart className="h-5 w-5" />
                   Revenue & Job Trends
                 </CardTitle>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" >
                   <Download className="h-4 w-4 mr-1" />
                   Export
                 </Button>
@@ -378,18 +379,18 @@ export function ReportsDashboard() {
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" size="sm">
+              <Button variant="outline" >
                 <Calendar className="h-4 w-4 mr-1" />
                 Select Dates
               </Button>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Refresh
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" >
                 <Share2 className="h-4 w-4 mr-1" />
                 Share
               </Button>

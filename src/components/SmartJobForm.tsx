@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -299,7 +300,7 @@ export function SmartJobForm() {
               </div>
               <Button
                 variant={isListening ? "destructive" : "outline"}
-                size="sm"
+                
                 onClick={startVoiceInput}
                 disabled={isListening}
               >
@@ -740,13 +741,13 @@ export function SmartJobForm() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      size="sm"
+                      
                       onClick={() => applyAISuggestion(suggestion)}
                     >
                       Apply
                     </Button>
                     <Button
-                      size="sm"
+                      
                       variant="outline"
                       onClick={() => setAiSuggestions(prev => prev.filter((_, i) => i !== index))}
                     >
