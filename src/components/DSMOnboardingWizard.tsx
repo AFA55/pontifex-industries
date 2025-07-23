@@ -215,6 +215,7 @@ export default function DSMOnboardingWizard({
     migrationStatus: {
       phasesCompleted: [],
       overallProgress: 0,
+      currentPhaseProgress: 0,
       activeIssues: [],
       resolvedIssues: [],
       blockers: [],

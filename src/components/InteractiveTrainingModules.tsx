@@ -705,6 +705,7 @@ const TRAINING_MODULES: ModuleContent[] = [
     ],
     assessment: {
       type: 'practical',
+      questions: [],
       practicalTasks: [
         {
           id: 'mobile_workflow',
@@ -793,6 +794,7 @@ const TRAINING_MODULES: ModuleContent[] = [
     ],
     assessment: {
       type: 'practical',
+      questions: [],
       practicalTasks: [
         {
           id: 'equipment_setup',

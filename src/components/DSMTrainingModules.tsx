@@ -858,8 +858,7 @@ export default function DSMTrainingModules({
           trainingProgress: {
             ...trainingProgress,
             completedModules: newCompletedModules,
-            overallProgress: 100,
-            status: 'completed'
+            overallProgress: 100
           }
         });
       }
