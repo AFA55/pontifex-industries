@@ -1,6 +1,7 @@
+"use client"
+
 import React from 'react';
 // src/components/ui/toaster.tsx - UPDATED with Modern Design
-"use client"
 
 import { useToast } from "@/hooks/use-toast"
 import {
