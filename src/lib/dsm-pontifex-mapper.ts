@@ -565,7 +565,8 @@ export class DSMPontifexMapper {
       osha_required: dsmJob.OSHARequired || false,
       silica_monitoring_required: this.requiresSilicaMonitoring(dsmJob.WorkType),
       created_by: createdBy,
-      company_id: companyId
+      company_id: companyId,
+      work_specifications: []
     };
 
     // Map optional fields
@@ -925,7 +926,7 @@ export class DSMPontifexMapper {
     }
 
     // Map custom fields including supplier info
-    asset.custom_fields = {
+    (asset as any).custom_fields = {
       ...this.mapCustomFields({
         CustomField1: dsmMaterial.CustomField1,
         CustomField2: dsmMaterial.CustomField2
@@ -955,7 +956,7 @@ export class DSMPontifexMapper {
     };
 
     // Map to Pontifex concrete work type
-    workType.concrete_work_type = this.config.workTypeMappings[dsmWorkType.WorkTypeName] || null;
+    workType.concrete_work_type = this.config.workTypeMappings[dsmWorkType.WorkTypeName] || undefined;
 
     if (dsmWorkType.DefaultBillingRate) {
       workType.default_billing_rate = dsmWorkType.DefaultBillingRate;

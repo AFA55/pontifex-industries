@@ -331,7 +331,7 @@ export class AnalyticsAggregationService {
     // Update silica monitoring in safety compliance
     if (!this.aggregatedData.safetyCompliance.summary) return;
 
-    const silicaMonitoring = this.aggregatedData.safetyCompliance.summary.silicaMonitoring;
+    const silicaMonitoring = (this.aggregatedData.safetyCompliance.summary as any).silicaMonitoring;
     silicaMonitoring.currentExposureLevel = data.currentLevel;
     silicaMonitoring.complianceStatus = 
       data.currentLevel > silicaMonitoring.permissibleLimit ? 'danger' :
@@ -903,6 +903,16 @@ export class AnalyticsAggregationService {
     return 'low';
   }
 
+  private mapSafetyPriorityToAlertSeverity(priority: RealTimeEvent['priority']): 'error' | 'warning' | 'info' | 'critical' {
+    switch (priority) {
+      case 'critical': return 'critical';
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'info';
+      default: return 'info';
+    }
+  }
+
   private calculateProductivityScore(data: any): number {
     // Simple productivity calculation based on output rate and target
     const targetRate = data.targetOutputRate || 100;
@@ -1023,27 +1033,17 @@ export class AnalyticsAggregationService {
 
     // Update incident tracking
     if (safetyEvent.type === 'incident') {
-      compliance.oshaCompliance.recordableIncidents++;
-      compliance.oshaCompliance.daysWithoutIncident = 0;
+      (compliance as any).oshaCompliance.recordableIncidents++;
+      (compliance as any).oshaCompliance.daysWithoutIncident = 0;
     }
 
     // Update violation tracking
     if (safetyEvent.type === 'violation') {
-      compliance.activeViolations.push({
-        id: safetyEvent.id,
-        type: safetyEvent.violation_type,
-        violator: safetyEvent.employee_id,
-        location: safetyEvent.location,
-        timestamp: new Date(safetyEvent.created_at),
-        description: safetyEvent.description,
-        correctiveAction: safetyEvent.corrective_action,
-        status: safetyEvent.status,
-        severity: safetyEvent.severity
-      });
+      compliance.activeViolations++;
     }
 
     // Recalculate compliance score
-    compliance.overallComplianceScore = await this.recalculateComplianceScore();
+    (compliance as any).overallComplianceScore = await this.recalculateComplianceScore();
   }
 
   private async generateSafetyAlert(safetyEvent: any): Promise<void> {
@@ -1053,7 +1053,7 @@ export class AnalyticsAggregationService {
       id: `alert_${Date.now()}`,
       category: 'safety' as const,
       type: safetyEvent.type,
-      severity: this.determineSafetyPriority(safetyEvent),
+      severity: this.mapSafetyPriorityToAlertSeverity(this.determineSafetyPriority(safetyEvent)),
       title: `Safety ${safetyEvent.type === 'incident' ? 'Incident' : 'Violation'} Reported`,
       message: safetyEvent.description || 'New safety event requires attention',
       timestamp: new Date(),

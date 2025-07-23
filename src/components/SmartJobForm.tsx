@@ -201,7 +201,7 @@ export function SmartJobForm() {
       workType: template.workType,
       title: `${template.name} - ${new Date().toLocaleDateString()}`,
       estimatedDuration: template.duration,
-      priority: template.priority || 'medium'
+      priority: (template.priority || 'medium') as 'medium' | 'low' | 'high' | 'urgent'
     }));
     
     generateAISuggestions('template');
